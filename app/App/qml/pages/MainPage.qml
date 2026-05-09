@@ -2,20 +2,36 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 Page {
-    objectName: "mainPage"
-    allowedOrientations: Orientation.All
+    id: page
 
-    PageHeader {
-        objectName: "pageHeader"
-        title: qsTr("App")
-        extraContent.children: [
-            IconButton {
-                objectName: "aboutButton"
-                icon.source: "image://theme/icon-m-about"
-                anchors.verticalCenter: parent.verticalCenter
+    Rectangle {
+        anchors.fill: parent
+        color: "#2B2B2B"
+    }
 
-                onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
+    Column {
+        anchors.centerIn: parent
+        spacing: 30
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "Выбери игру"
+            font.pixelSize: 32
+            color: "white"
+        }
+
+        Button {
+            text: "Шахматы"
+            onClicked: {
+                console.log("Запуск шахмат")
             }
-        ]
+        }
+
+        Button {
+            text: "Вторая игра"
+            onClicked: {
+                console.log("Запуск второй игры")
+            }
+        }
     }
 }
