@@ -20,3 +20,6 @@ CONFIG += auroraapp_i18n
 TRANSLATIONS += \
     translations/ru.template.Chess.ts \
     translations/ru.template.Chess-ru.ts \
+
+RESOURCES += \
+    chess-resources.qrc
