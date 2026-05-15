@@ -6,9 +6,11 @@ CONFIG += \
 PKGCONFIG += \
 
 SOURCES += \
+    src/boardmodel.cpp \
     src/main.cpp \
 
 HEADERS += \
+    src/boardmodel.h
 
 DISTFILES += \
     rpm/ru.template.Chess.spec \

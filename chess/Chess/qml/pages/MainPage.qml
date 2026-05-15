@@ -1,14 +1,25 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import Chess 1.0
 
 Page
 {
     id: page
+
     property int selectedRow: -1
     property int selectedCol: -1
+    property int updateTrigger: 0
 
-    Rectangle
+    BoardModel
     {
+        id: boardModel
+        onBoardStateChanged:
+        {
+            updateTrigger++
+        }
+    }
+
+    Rectangle {
         anchors.fill: parent
         color: "#2B2B2B"
     }
@@ -22,22 +33,33 @@ Page
         color: "white"
     }
 
-    Rectangle
+    Loader
     {
-        id: board
+        id: boardLoader
+        anchors.centerIn: parent
         width: 400
         height: 400
-        anchors.centerIn: parent
-        color: "transparent"
+        sourceComponent: boardComponent
+    }
 
+    onUpdateTriggerChanged:
+    {
+        var oldComponent = boardLoader.sourceComponent
+        boardLoader.sourceComponent = undefined
+        boardLoader.sourceComponent = oldComponent
+    }
+
+    Component
+    {
+        id: boardComponent
         Grid
         {
             id: chessGrid
             rows: 8
             columns: 8
             spacing: 0
-            width: parent.width
-            height: parent.height
+            width: 400
+            height: 400
 
             Repeater
             {
@@ -50,6 +72,9 @@ Page
                     border.color: "#333"
                     border.width: 0.5
 
+                    property int row: Math.floor(index / 8)
+                    property int col: index % 8
+
                     Rectangle
                     {
                         anchors.fill: parent
@@ -57,28 +82,28 @@ Page
                         opacity: 0.5
                     }
 
-                    property int row: Math.floor(index / 8)
-                    property int col: index % 8
-
                     MouseArea
                     {
-                            anchors.fill: parent
-                            onClicked:
+                        anchors.fill: parent
+                        onClicked: {
+                            if (selectedRow === -1)
                             {
-                                if (page.selectedRow === -1)
+                                if (boardModel.pieceAt(row, col) !== "")
                                 {
-                                    page.selectedRow = row
-                                    page.selectedCol = col
-                                    console.log("Выбрана клетка:", row, col)
-                                }
-                                else
-                                {
-                                    console.log("Ход с", page.selectedRow, page.selectedCol, "на", row, col)
-                                    page.selectedRow = -1
-                                    page.selectedCol = -1
+                                    selectedRow = row
+                                    selectedCol = col
+                                    console.log("Selected:", row, col)
                                 }
                             }
+                            else
+                            {
+                                console.log("Move from", selectedRow, selectedCol, "to", row, col)
+                                boardModel.movePiece(selectedRow, selectedCol, row, col)
+                                selectedRow = -1
+                                selectedCol = -1
+                            }
                         }
+                    }
 
                     Image
                     {
@@ -88,24 +113,20 @@ Page
                         fillMode: Image.PreserveAspectFit
                         source:
                         {
-                            if (row === 0)
-                            {
-                                if (col === 0 || col === 7) return "Chess_rdt45.svg"
-                                if (col === 1 || col === 6) return "Chess_ndt45.svg"
-                                if (col === 2 || col === 5) return "Chess_bdt45.svg"
-                                if (col === 3) return "Chess_qdt45.svg"
-                                if (col === 4) return "Chess_kdt45.svg"
-                            }
-                            if (row === 1) return "Chess_pdt45.svg"
-                            if (row === 6) return "Chess_plt45.svg"
-                            if (row === 7)
-                            {
-                                if (col === 0 || col === 7) return "Chess_rlt45.svg"
-                                if (col === 1 || col === 6) return "Chess_nlt45.svg"
-                                if (col === 2 || col === 5) return "Chess_blt45.svg"
-                                if (col === 3) return "Chess_qlt45.svg"
-                                if (col === 4) return "Chess_klt45.svg"
-                            }
+                            var piece = boardModel.pieceAt(row, col)
+                            if (piece === "") return ""
+                            if (piece === "♜") return "Chess_rdt45.svg"
+                            if (piece === "♞") return "Chess_ndt45.svg"
+                            if (piece === "♝") return "Chess_bdt45.svg"
+                            if (piece === "♛") return "Chess_qdt45.svg"
+                            if (piece === "♚") return "Chess_kdt45.svg"
+                            if (piece === "♟") return "Chess_pdt45.svg"
+                            if (piece === "♖") return "Chess_rlt45.svg"
+                            if (piece === "♘") return "Chess_nlt45.svg"
+                            if (piece === "♗") return "Chess_blt45.svg"
+                            if (piece === "♕") return "Chess_qlt45.svg"
+                            if (piece === "♔") return "Chess_klt45.svg"
+                            if (piece === "♙") return "Chess_plt45.svg"
                             return ""
                         }
                     }
