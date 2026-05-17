@@ -5,6 +5,8 @@ BoardModel::BoardModel(QObject *parent) : QObject(parent)
 {
     initBoard();
     m_whiteTurn = true;
+    m_gameOver = false;
+    m_gameResult = "";
 }
 
 void BoardModel::initBoard()
@@ -100,7 +102,8 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
         }
         int stepRow = (toRow - fromRow) == 0 ? 0 : (toRow - fromRow) / abs(toRow - fromRow);
         int stepCol = (toCol - fromCol) == 0 ? 0 : (toCol - fromCol) / abs(toCol - fromCol);
-        int r = fromRow + stepRow, c = fromCol + stepCol;
+        int r = fromRow + stepRow;
+        int c = fromCol + stepCol;
         while (r != toRow || c != toCol)
         {
             if (!pieceAt(r, c).isEmpty())
@@ -121,7 +124,8 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
         }
         int stepRow = dr > 0 ? 1 : -1;
         int stepCol = dc > 0 ? 1 : -1;
-        int r = fromRow + stepRow, c = fromCol + stepCol;
+        int r = fromRow + stepRow;
+        int c = fromCol + stepCol;
         while (r != toRow || c != toCol)
         {
             if (!pieceAt(r, c).isEmpty())
@@ -140,7 +144,8 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
         {
             int stepRow = (toRow - fromRow) == 0 ? 0 : (toRow - fromRow) / abs(toRow - fromRow);
             int stepCol = (toCol - fromCol) == 0 ? 0 : (toCol - fromCol) / abs(toCol - fromCol);
-            int r = fromRow + stepRow, c = fromCol + stepCol;
+            int r = fromRow + stepRow;
+            int c = fromCol + stepCol;
             while (r != toRow || c != toCol)
             {
                 if (!pieceAt(r, c).isEmpty())
@@ -156,7 +161,8 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
         {
             int stepRow = dr > 0 ? 1 : -1;
             int stepCol = dc > 0 ? 1 : -1;
-            int r = fromRow + stepRow, c = fromCol + stepCol;
+            int r = fromRow + stepRow;
+            int c = fromCol + stepCol;
             while (r != toRow || c != toCol)
             {
                 if (!pieceAt(r, c).isEmpty())
@@ -188,6 +194,156 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
         return false;
     }
 
+    return false;
+}
+
+bool BoardModel::wouldBeInCheckAfterMove(int fromRow, int fromCol, int toRow, int toCol, bool whiteKing) const
+{
+    QVector<QVector<QString>> tempBoard = m_board;
+    QString piece = tempBoard[fromRow][fromCol];
+    tempBoard[toRow][toCol] = piece;
+    tempBoard[fromRow][fromCol] = "";
+
+    int kingRow = -1, kingCol = -1;
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            QString p = tempBoard[i][j];
+            if (p == (whiteKing ? "♔" : "♚"))
+            {
+                kingRow = i;
+                kingCol = j;
+                break;
+            }
+        }
+        if (kingRow != -1) break;
+    }
+
+    if (kingRow == -1) return false;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            QString p = tempBoard[i][j];
+            if (p.isEmpty()) continue;
+
+            bool isWhite = (p == "♙" || p == "♖" || p == "♘" || p == "♗" || p == "♕" || p == "♔");
+            if (isWhite == whiteKing) continue;
+
+            int dr = kingRow - i;
+            int dc = kingCol - j;
+
+            if (p == "♙")
+            {
+                if (dr == -1 && abs(dc) == 1) return true;
+                continue;
+            }
+            if (p == "♟")
+            {
+                if (dr == 1 && abs(dc) == 1) return true;
+                continue;
+            }
+            if (p == "♖" || p == "♜")
+            {
+                if (i != kingRow && j != kingCol) continue;
+                int stepRow = (kingRow - i) == 0 ? 0 : (kingRow - i) / abs(kingRow - i);
+                int stepCol = (kingCol - j) == 0 ? 0 : (kingCol - j) / abs(kingCol - j);
+                int r = i + stepRow, c = j + stepCol;
+                bool blocked = false;
+                while (r != kingRow || c != kingCol)
+                {
+                    if (!tempBoard[r][c].isEmpty())
+                    {
+                        blocked = true;
+                        break;
+                    }
+                    r += stepRow;
+                    c += stepCol;
+                }
+                if (!blocked) return true;
+                continue;
+            }
+            if (p == "♗" || p == "♝")
+            {
+                if (abs(kingRow - i) != abs(kingCol - j)) continue;
+                int stepRow = (kingRow - i) > 0 ? 1 : -1;
+                int stepCol = (kingCol - j) > 0 ? 1 : -1;
+                int r = i + stepRow, c = j + stepCol;
+                bool blocked = false;
+                while (r != kingRow || c != kingCol)
+                {
+                    if (!tempBoard[r][c].isEmpty())
+                    {
+                        blocked = true;
+                        break;
+                    }
+                    r += stepRow;
+                    c += stepCol;
+                }
+                if (!blocked) return true;
+                continue;
+            }
+            if (p == "♕" || p == "♛")
+            {
+                if (i == kingRow || j == kingCol)
+                {
+                    int stepRow = (kingRow - i) == 0 ? 0 : (kingRow - i) / abs(kingRow - i);
+                    int stepCol = (kingCol - j) == 0 ? 0 : (kingCol - j) / abs(kingCol - j);
+                    int r = i + stepRow, c = j + stepCol;
+                    bool blocked = false;
+                    while (r != kingRow || c != kingCol)
+                    {
+                        if (!tempBoard[r][c].isEmpty())
+                        {
+                            blocked = true;
+                            break;
+                        }
+                        r += stepRow;
+                        c += stepCol;
+                    }
+                    if (!blocked) return true;
+                }
+                if (abs(kingRow - i) == abs(kingCol - j))
+                {
+                    int stepRow = (kingRow - i) > 0 ? 1 : -1;
+                    int stepCol = (kingCol - j) > 0 ? 1 : -1;
+                    int r = i + stepRow, c = j + stepCol;
+                    bool blocked = false;
+                    while (r != kingRow || c != kingCol)
+                    {
+                        if (!tempBoard[r][c].isEmpty())
+                        {
+                            blocked = true;
+                            break;
+                        }
+                        r += stepRow;
+                        c += stepCol;
+                    }
+                    if (!blocked) return true;
+                }
+                continue;
+            }
+            if (p == "♘" || p == "♞")
+            {
+                if ((abs(kingRow - i) == 2 && abs(kingCol - j) == 1) ||
+                    (abs(kingRow - i) == 1 && abs(kingCol - j) == 2))
+                {
+                    return true;
+                }
+                continue;
+            }
+            if (p == "♔" || p == "♚")
+            {
+                if (abs(kingRow - i) <= 1 && abs(kingCol - j) <= 1)
+                {
+                    return true;
+                }
+                continue;
+            }
+        }
+    }
     return false;
 }
 
@@ -242,8 +398,42 @@ bool BoardModel::isKingInCheck(bool whiteKing) const
     return false;
 }
 
+bool BoardModel::hasLegalMoves(bool white) const
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            QString piece = m_board[i][j];
+            if (piece.isEmpty()) continue;
+
+            bool isWhite = (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔");
+            if (isWhite != white) continue;
+
+            for (int ti = 0; ti < 8; ++ti)
+            {
+                for (int tj = 0; tj < 8; ++tj)
+                {
+                    if (!isValidMove(i, j, ti, tj)) continue;
+                    if (!wouldBeInCheckAfterMove(i, j, ti, tj, white))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
 {
+    if (m_gameOver)
+    {
+        qDebug() << "Game is over, no more moves";
+        return;
+    }
+
     QString piece = pieceAt(fromRow, fromCol);
     if (piece.isEmpty())
     {
@@ -263,9 +453,34 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         return;
     }
 
+    if (wouldBeInCheckAfterMove(fromRow, fromCol, toRow, toCol, m_whiteTurn))
+    {
+        qDebug() << "Move would put your own king in check!";
+        return;
+    }
+
     m_board[toRow][toCol] = piece;
     m_board[fromRow][fromCol] = "";
     m_whiteTurn = !m_whiteTurn;
+
+    bool isCheck = isKingInCheck(m_whiteTurn);
+    bool hasMoves = hasLegalMoves(m_whiteTurn);
+
+    if (!hasMoves)
+    {
+        m_gameOver = true;
+        if (isCheck)
+        {
+            m_gameResult = m_whiteTurn ? "Чёрные победили (мат)" : "Белые победили (мат)";
+        }
+        else
+        {
+            m_gameResult = "Пат (ничья)";
+        }
+        qDebug() << "Game over:" << m_gameResult;
+        emit gameOverChanged();
+    }
+
     emit whiteTurnChanged();
     emit boardStateChanged();
 }
@@ -273,4 +488,14 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
 bool BoardModel::isWhiteTurn() const
 {
     return m_whiteTurn;
+}
+
+bool BoardModel::isGameOver() const
+{
+    return m_gameOver;
+}
+
+QString BoardModel::gameResult() const
+{
+    return m_gameResult;
 }

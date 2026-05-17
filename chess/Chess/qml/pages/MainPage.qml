@@ -46,6 +46,16 @@ Page
             color: "white"
         }
 
+    Label
+    {
+        text: boardModel.gameResult
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 120
+        font.pixelSize: 28
+        color: "red"
+        visible: boardModel.gameResult() !== ""
+    }
+
     Loader
     {
         id: boardLoader
@@ -98,7 +108,9 @@ Page
                     MouseArea
                     {
                         anchors.fill: parent
-                        onClicked: {
+                        onClicked:
+                        {
+                            if (boardModel.isGameOver()) return;
                             if (selectedRow === -1)
                             {
                                 if (boardModel.pieceAt(row, col) !== "")
