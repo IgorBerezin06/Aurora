@@ -1,4 +1,5 @@
 #include "boardmodel.h"
+#include <QDebug>
 
 BoardModel::BoardModel(QObject *parent) : QObject(parent)
 {
@@ -41,11 +42,123 @@ QString BoardModel::pieceAt(int row, int col) const
     return m_board[row][col];
 }
 
-void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
+bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol)
 {
     QString piece = pieceAt(fromRow, fromCol);
-    if (piece.isEmpty()) return;
+    if (piece.isEmpty()) return false;
 
+    QString target = pieceAt(toRow, toCol);
+    bool sameColor = false;
+    if (!target.isEmpty())
+    {
+        sameColor = (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔") ?
+                        (target == "♙" || target == "♖" || target == "♘" || target == "♗" || target == "♕" || target == "♔") :
+                        (target == "♟" || target == "♜" || target == "♞" || target == "♝" || target == "♛" || target == "♚");
+        if (sameColor) return false;
+    }
+
+    int dr = toRow - fromRow;
+    int dc = toCol - fromCol;
+
+    if (piece == "♙")
+    {
+        if (dr == -1 && dc == 0 && target.isEmpty()) return true;
+        if (fromRow == 6 && dr == -2 && dc == 0 && target.isEmpty() && pieceAt(5, fromCol).isEmpty()) return true;
+        if (dr == -1 && abs(dc) == 1 && !target.isEmpty()) return true;
+        return false;
+    }
+
+    if (piece == "♟")
+    {
+        if (dr == 1 && dc == 0 && target.isEmpty()) return true;
+        if (fromRow == 1 && dr == 2 && dc == 0 && target.isEmpty() && pieceAt(2, fromCol).isEmpty()) return true;
+        if (dr == 1 && abs(dc) == 1 && !target.isEmpty()) return true;
+        return false;
+    }
+
+    if (piece == "♖" || piece == "♜")
+    {
+        if (fromRow != toRow && fromCol != toCol) return false;
+        int stepRow = (toRow - fromRow) == 0 ? 0 : (toRow - fromRow) / abs(toRow - fromRow);
+        int stepCol = (toCol - fromCol) == 0 ? 0 : (toCol - fromCol) / abs(toCol - fromCol);
+        int r = fromRow + stepRow, c = fromCol + stepCol;
+        while (r != toRow || c != toCol)
+        {
+            if (!pieceAt(r, c).isEmpty()) return false;
+            r += stepRow; c += stepCol;
+        }
+        return true;
+    }
+
+    if (piece == "♗" || piece == "♝")
+    {
+        if (abs(dr) != abs(dc)) return false;
+        int stepRow = dr > 0 ? 1 : -1;
+        int stepCol = dc > 0 ? 1 : -1;
+        int r = fromRow + stepRow, c = fromCol + stepCol;
+        while (r != toRow || c != toCol)
+        {
+            if (!pieceAt(r, c).isEmpty()) return false;
+            r += stepRow; c += stepCol;
+        }
+        return true;
+    }
+
+    if (piece == "♕" || piece == "♛")
+    {
+        if (fromRow == toRow || fromCol == toCol)
+        {
+            int stepRow = (toRow - fromRow) == 0 ? 0 : (toRow - fromRow) / abs(toRow - fromRow);
+            int stepCol = (toCol - fromCol) == 0 ? 0 : (toCol - fromCol) / abs(toCol - fromCol);
+            int r = fromRow + stepRow, c = fromCol + stepCol;
+            while (r != toRow || c != toCol)
+            {
+                if (!pieceAt(r, c).isEmpty()) return false;
+                r += stepRow; c += stepCol;
+            }
+            return true;
+        }
+        if (abs(dr) == abs(dc))
+        {
+            int stepRow = dr > 0 ? 1 : -1;
+            int stepCol = dc > 0 ? 1 : -1;
+            int r = fromRow + stepRow, c = fromCol + stepCol;
+            while (r != toRow || c != toCol)
+            {
+                if (!pieceAt(r, c).isEmpty()) return false;
+                r += stepRow; c += stepCol;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    if (piece == "♘" || piece == "♞")
+    {
+        return (abs(dr) == 2 && abs(dc) == 1) || (abs(dr) == 1 && abs(dc) == 2);
+    }
+
+    if (piece == "♔" || piece == "♚")
+    {
+        if (abs(dr) <= 1 && abs(dc) <= 1)
+        {
+            if (target.isEmpty() || !sameColor) return true;
+        }
+        return false;
+    }
+
+    return false;
+}
+
+void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
+{
+    if (!isValidMove(fromRow, fromCol, toRow, toCol))
+    {
+        qDebug() << "Invalid move";
+        return;
+    }
+
+    QString piece = pieceAt(fromRow, fromCol);
     m_board[toRow][toCol] = piece;
     m_board[fromRow][fromCol] = "";
     emit boardStateChanged();

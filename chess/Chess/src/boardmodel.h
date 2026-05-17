@@ -17,6 +17,8 @@ public:
     Q_INVOKABLE void movePiece(int fromRow, int fromCol, int toRow, int toCol);
     Q_INVOKABLE QString pieceAt(int row, int col) const;
 
+    bool isValidMove(int fromRow, int fromCol, int toRow, int toCol);
+
 signals:
     void boardStateChanged();
 
