@@ -17,6 +17,10 @@ Page
         {
             updateTrigger++
         }
+        onWhiteTurnChanged:
+        {
+            updateTrigger++
+        }
     }
 
     Rectangle {
@@ -32,6 +36,15 @@ Page
         font.pixelSize: 36
         color: "white"
     }
+
+    Label
+        {
+            text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 80
+            font.pixelSize: 24
+            color: "white"
+        }
 
     Loader
     {
