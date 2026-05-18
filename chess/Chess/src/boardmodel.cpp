@@ -14,6 +14,9 @@ BoardModel::BoardModel(QObject *parent) : QObject(parent)
     m_blackKingMoved = false;
     m_blackRookMovedKingside = false;
     m_blackRookMovedQueenside = false;
+
+    m_enPassantTargetRow = -1;
+    m_enPassantTargetCol = -1;
 }
 
 void BoardModel::initBoard()
@@ -187,6 +190,18 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
     if (piece == "♘" || piece == "♞")
     {
         return (abs(dr) == 2 && abs(dc) == 1) || (abs(dr) == 1 && abs(dc) == 2);
+    }
+
+    if (piece == "♙" && dr == -1 && abs(dc) == 1 && target.isEmpty() &&
+        toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol)
+    {
+        return true;
+    }
+
+    if (piece == "♟" && dr == 1 && abs(dc) == 1 && target.isEmpty() &&
+        toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol)
+    {
+        return true;
     }
 
     if (piece == "♔" && !m_whiteKingMoved && fromRow == 7 && fromCol == 4)
@@ -552,6 +567,28 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         return;
     }
 
+    if (piece == "♙" && toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol && m_board[toRow + 1][toCol] == "♟")
+    {
+        m_board[toRow][toCol] = piece;
+        m_board[fromRow][fromCol] = "";
+        m_board[toRow + 1][toCol] = "";
+        m_whiteTurn = !m_whiteTurn;
+        emit boardStateChanged();
+        emit whiteTurnChanged();
+        return;
+    }
+
+    if (piece == "♟" && toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol && m_board[toRow - 1][toCol] == "♙")
+    {
+        m_board[toRow][toCol] = piece;
+        m_board[fromRow][fromCol] = "";
+        m_board[toRow - 1][toCol] = "";
+        m_whiteTurn = !m_whiteTurn;
+        emit boardStateChanged();
+        emit whiteTurnChanged();
+        return;
+    }
+
     m_board[toRow][toCol] = piece;
     m_board[fromRow][fromCol] = "";
 
@@ -562,6 +599,20 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
     if (piece == "♟" && toRow == 7)
     {
         m_board[toRow][toCol] = "♛";
+    }
+
+    m_enPassantTargetRow = -1;
+    m_enPassantTargetCol = -1;
+
+    if (piece == "♙" && abs(dr) == 2)
+    {
+        m_enPassantTargetRow = toRow + 1;
+        m_enPassantTargetCol = toCol;
+    }
+    if (piece == "♟" && abs(dr) == 2)
+    {
+        m_enPassantTargetRow = toRow - 1;
+        m_enPassantTargetCol = toCol;
     }
 
     if (piece == "♔") m_whiteKingMoved = true;

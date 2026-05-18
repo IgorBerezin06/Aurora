@@ -36,13 +36,17 @@ private:
     QVector<QVector<QString>> m_board;
     bool m_whiteTurn;
     bool m_gameOver;
+    QString m_gameResult;
+
     bool m_whiteKingMoved;
     bool m_whiteRookMovedKingside;
     bool m_whiteRookMovedQueenside;
     bool m_blackKingMoved;
     bool m_blackRookMovedKingside;
     bool m_blackRookMovedQueenside;
-    QString m_gameResult;
+
+    int m_enPassantTargetRow;
+    int m_enPassantTargetCol;
 
     void initBoard();
 };
