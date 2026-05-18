@@ -7,6 +7,13 @@ BoardModel::BoardModel(QObject *parent) : QObject(parent)
     m_whiteTurn = true;
     m_gameOver = false;
     m_gameResult = "";
+
+    m_whiteKingMoved = false;
+    m_whiteRookMovedKingside = false;
+    m_whiteRookMovedQueenside = false;
+    m_blackKingMoved = false;
+    m_blackRookMovedKingside = false;
+    m_blackRookMovedQueenside = false;
 }
 
 void BoardModel::initBoard()
@@ -180,6 +187,46 @@ bool BoardModel::isValidMove(int fromRow, int fromCol, int toRow, int toCol) con
     if (piece == "♘" || piece == "♞")
     {
         return (abs(dr) == 2 && abs(dc) == 1) || (abs(dr) == 1 && abs(dc) == 2);
+    }
+
+    if (piece == "♔" && !m_whiteKingMoved && fromRow == 7 && fromCol == 4)
+    {
+        if (toRow == 7 && toCol == 6 && !m_whiteRookMovedKingside)
+        {
+            if (pieceAt(7, 5).isEmpty() && pieceAt(7, 6).isEmpty() &&
+                !isKingInCheck(true) && !wouldBeInCheckAfterMove(7, 4, 7, 5, true) && !wouldBeInCheckAfterMove(7, 4, 7, 6, true))
+            {
+                return true;
+            }
+        }
+        if (toRow == 7 && toCol == 2 && !m_whiteRookMovedQueenside)
+        {
+            if (pieceAt(7, 3).isEmpty() && pieceAt(7, 2).isEmpty() && pieceAt(7, 1).isEmpty() &&
+                !isKingInCheck(true) && !wouldBeInCheckAfterMove(7, 4, 7, 3, true) && !wouldBeInCheckAfterMove(7, 4, 7, 2, true))
+            {
+                return true;
+            }
+        }
+    }
+
+    if (piece == "♚" && !m_blackKingMoved && fromRow == 0 && fromCol == 4)
+    {
+        if (toRow == 0 && toCol == 6 && !m_blackRookMovedKingside)
+        {
+            if (pieceAt(0, 5).isEmpty() && pieceAt(0, 6).isEmpty() &&
+                !isKingInCheck(false) && !wouldBeInCheckAfterMove(0, 4, 0, 5, false) && !wouldBeInCheckAfterMove(0, 4, 0, 6, false))
+            {
+                return true;
+            }
+        }
+        if (toRow == 0 && toCol == 2 && !m_blackRookMovedQueenside)
+        {
+            if (pieceAt(0, 3).isEmpty() && pieceAt(0, 2).isEmpty() && pieceAt(0, 1).isEmpty() &&
+                !isKingInCheck(false) && !wouldBeInCheckAfterMove(0, 4, 0, 3, false) && !wouldBeInCheckAfterMove(0, 4, 0, 2, false))
+            {
+                return true;
+            }
+        }
     }
 
     if (piece == "♔" || piece == "♚")
@@ -459,8 +506,62 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         return;
     }
 
+    if ((piece == "♔" && fromRow == 7 && fromCol == 4 && toRow == 7 && toCol == 6) ||
+        (piece == "♚" && fromRow == 0 && fromCol == 4 && toRow == 0 && toCol == 6))
+    {
+        m_board[toRow][toCol] = piece;
+        m_board[fromRow][fromCol] = "";
+        m_board[toRow][5] = (piece == "♔") ? "♖" : "♜";
+        m_board[toRow][7] = "";
+        if (piece == "♔")
+        {
+            m_whiteKingMoved = true;
+            m_whiteRookMovedKingside = true;
+        }
+        else
+        {
+            m_blackKingMoved = true;
+            m_blackRookMovedKingside = true;
+        }
+        m_whiteTurn = !m_whiteTurn;
+        emit boardStateChanged();
+        emit whiteTurnChanged();
+        return;
+    }
+
+    if ((piece == "♔" && fromRow == 7 && fromCol == 4 && toRow == 7 && toCol == 2) ||
+        (piece == "♚" && fromRow == 0 && fromCol == 4 && toRow == 0 && toCol == 2))
+    {
+        m_board[toRow][toCol] = piece;
+        m_board[fromRow][fromCol] = "";
+        m_board[toRow][3] = (piece == "♔") ? "♖" : "♜";
+        m_board[toRow][0] = "";
+        if (piece == "♔")
+        {
+            m_whiteKingMoved = true;
+            m_whiteRookMovedQueenside = true;
+        }
+        else
+        {
+            m_blackKingMoved = true;
+            m_blackRookMovedQueenside = true;
+        }
+        m_whiteTurn = !m_whiteTurn;
+        emit boardStateChanged();
+        emit whiteTurnChanged();
+        return;
+    }
+
     m_board[toRow][toCol] = piece;
     m_board[fromRow][fromCol] = "";
+
+    if (piece == "♔") m_whiteKingMoved = true;
+    if (piece == "♚") m_blackKingMoved = true;
+    if (piece == "♖" && fromRow == 7 && fromCol == 7) m_whiteRookMovedKingside = true;
+    if (piece == "♖" && fromRow == 7 && fromCol == 0) m_whiteRookMovedQueenside = true;
+    if (piece == "♜" && fromRow == 0 && fromCol == 7) m_blackRookMovedKingside = true;
+    if (piece == "♜" && fromRow == 0 && fromCol == 0) m_blackRookMovedQueenside = true;
+
     m_whiteTurn = !m_whiteTurn;
 
     bool isCheck = isKingInCheck(m_whiteTurn);

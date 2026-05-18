@@ -36,6 +36,12 @@ private:
     QVector<QVector<QString>> m_board;
     bool m_whiteTurn;
     bool m_gameOver;
+    bool m_whiteKingMoved;
+    bool m_whiteRookMovedKingside;
+    bool m_whiteRookMovedQueenside;
+    bool m_blackKingMoved;
+    bool m_blackRookMovedKingside;
+    bool m_blackRookMovedQueenside;
     QString m_gameResult;
 
     void initBoard();
