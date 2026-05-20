@@ -1,5 +1,6 @@
 #include "boardmodel.h"
 #include <QDebug>
+#include <QVariantMap>
 
 BoardModel::BoardModel(QObject *parent) : QObject(parent)
 {
@@ -502,6 +503,8 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         return;
     }
 
+    int dr = toRow - fromRow;
+
     bool isWhitePiece = (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔");
     if ((m_whiteTurn && !isWhitePiece) || (!m_whiteTurn && isWhitePiece))
     {
@@ -659,4 +662,40 @@ bool BoardModel::isGameOver() const
 QString BoardModel::gameResult() const
 {
     return m_gameResult;
+}
+
+QVariantList BoardModel::getValidMoves(int row, int col)
+{
+    QVariantList moves;
+    QString piece = pieceAt(row, col);
+    if (piece.isEmpty()) return moves;
+
+    bool isWhitePiece = (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔");
+
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            if (isValidMove(row, col, i, j))
+            {
+                if (!wouldBeInCheckAfterMove(row, col, i, j, isWhitePiece))
+                {
+                    QVariantMap move;
+                    move["row"] = i;
+                    move["col"] = j;
+                    moves.append(move);
+                }
+            }
+        }
+    }
+    return moves;
+}
+
+void BoardModel::promotePawn(int row, int col, const QString& piece)
+{
+    if (m_board[row][col] == "♙" || m_board[row][col] == "♟")
+    {
+        m_board[row][col] = piece;
+        emit boardStateChanged();
+    }
 }

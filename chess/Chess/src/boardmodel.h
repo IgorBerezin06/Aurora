@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QVector>
+#include <QPair>
+#include <QVariant>
 
 class BoardModel : public QObject
 {
@@ -21,6 +23,8 @@ public:
     Q_INVOKABLE bool isWhiteTurn() const;
     Q_INVOKABLE bool isGameOver() const;
     Q_INVOKABLE QString gameResult() const;
+    Q_INVOKABLE QVariantList getValidMoves(int row, int col);
+    Q_INVOKABLE void promotePawn(int row, int col, const QString& piece);
 
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol) const;
     bool isKingInCheck(bool whiteKing) const;

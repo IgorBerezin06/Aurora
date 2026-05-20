@@ -9,6 +9,7 @@ Page
     property int selectedRow: -1
     property int selectedCol: -1
     property int updateTrigger: 0
+    property var validMoves: []
 
     BoardModel
     {
@@ -38,13 +39,13 @@ Page
     }
 
     Label
-        {
-            text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: 80
-            font.pixelSize: 24
-            color: "white"
-        }
+    {
+        text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 80
+        font.pixelSize: 24
+        color: "white"
+    }
 
     Label
     {
@@ -53,7 +54,7 @@ Page
         y: 120
         font.pixelSize: 28
         color: "red"
-        visible: boardModel.gameResult() !== ""
+        visible: boardModel.gameResult !== ""
     }
 
     Loader
@@ -101,6 +102,23 @@ Page
                     Rectangle
                     {
                         anchors.fill: parent
+                        color:
+                        {
+                            for (var i = 0; i < page.validMoves.length; i++)
+                            {
+                                if (page.validMoves[i].row === row && page.validMoves[i].col === col)
+                                {
+                                    return "#88FF88"
+                                }
+                            }
+                            return "transparent"
+                        }
+                        opacity: 0.6
+                    }
+
+                    Rectangle
+                    {
+                        anchors.fill: parent
                         color: (row === page.selectedRow && col === page.selectedCol) ? "#FFFF00" : "transparent"
                         opacity: 0.5
                     }
@@ -110,14 +128,15 @@ Page
                         anchors.fill: parent
                         onClicked:
                         {
-                            if (boardModel.isGameOver()) return;
+                            if (boardModel.isGameOver()) return
                             if (selectedRow === -1)
                             {
                                 if (boardModel.pieceAt(row, col) !== "")
                                 {
                                     selectedRow = row
                                     selectedCol = col
-                                    console.log("Selected:", row, col)
+                                    validMoves = boardModel.getValidMoves(selectedRow, selectedCol)
+                                    console.log("Selected:", row, col, "Moves:", validMoves.length)
                                 }
                             }
                             else
@@ -126,6 +145,7 @@ Page
                                 boardModel.movePiece(selectedRow, selectedCol, row, col)
                                 selectedRow = -1
                                 selectedCol = -1
+                                validMoves = []
                             }
                         }
                     }
