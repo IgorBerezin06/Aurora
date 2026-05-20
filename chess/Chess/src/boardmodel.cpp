@@ -18,6 +18,9 @@ BoardModel::BoardModel(QObject *parent) : QObject(parent)
 
     m_enPassantTargetRow = -1;
     m_enPassantTargetCol = -1;
+
+    m_aiMode = false;
+    m_aiLevel = 1;
 }
 
 void BoardModel::initBoard()
@@ -698,4 +701,37 @@ void BoardModel::promotePawn(int row, int col, const QString& piece)
         m_board[row][col] = piece;
         emit boardStateChanged();
     }
+}
+
+bool BoardModel::aiMode() const
+{
+    return m_aiMode;
+}
+
+void BoardModel::setAiMode(bool mode)
+{
+    if (m_aiMode != mode)
+    {
+        m_aiMode = mode;
+        emit aiModeChanged();
+    }
+}
+
+int BoardModel::aiLevel() const
+{
+    return m_aiLevel;
+}
+
+void BoardModel::setAiLevel(int level)
+{
+    if (m_aiLevel != level)
+    {
+        m_aiLevel = level;
+        emit aiLevelChanged();
+    }
+}
+
+void BoardModel::aiMove()
+{
+    qDebug() << "AI move called, level:" << m_aiLevel;
 }

@@ -10,6 +10,8 @@ Page
     property int selectedCol: -1
     property int updateTrigger: 0
     property var validMoves: []
+    property bool aiMode: false
+    property int aiLevel: 1
 
     BoardModel
     {
@@ -17,10 +19,28 @@ Page
         onBoardStateChanged:
         {
             updateTrigger++
+            if (aiMode && !boardModel.isWhiteTurn() && !boardModel.isGameOver())
+            {
+                aiMoveTimer.start()
+            }
         }
         onWhiteTurnChanged:
         {
             updateTrigger++
+            if (aiMode && !boardModel.isWhiteTurn() && !boardModel.isGameOver())
+            {
+                aiMoveTimer.start()
+            }
+        }
+    }
+
+    Timer
+    {
+        id: aiMoveTimer
+        interval: 500
+        onTriggered:
+        {
+            boardModel.aiMove()
         }
     }
 

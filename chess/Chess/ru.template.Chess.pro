@@ -13,6 +13,8 @@ HEADERS += \
     src/boardmodel.h
 
 DISTFILES += \
+    qml/pages/DifficultySelection.qml \
+    qml/pages/ModeSelection.qml \
     rpm/ru.template.Chess.spec \
 
 AURORAAPP_ICONS = 86x86 108x108 128x128 172x172
@@ -23,5 +25,4 @@ TRANSLATIONS += \
     translations/ru.template.Chess.ts \
     translations/ru.template.Chess-ru.ts \
 
-RESOURCES += \
-    chess-resources.qrc
+RESOURCES +=

@@ -13,6 +13,8 @@ class BoardModel : public QObject
     Q_PROPERTY(bool whiteTurn READ isWhiteTurn NOTIFY whiteTurnChanged)
     Q_PROPERTY(bool gameOver READ isGameOver NOTIFY gameOverChanged)
     Q_PROPERTY(QString gameResult READ gameResult NOTIFY gameOverChanged)
+    Q_PROPERTY(bool aiMode READ aiMode WRITE setAiMode NOTIFY aiModeChanged)
+    Q_PROPERTY(int aiLevel READ aiLevel WRITE setAiLevel NOTIFY aiLevelChanged)
 
 public:
     explicit BoardModel(QObject *parent = nullptr);
@@ -25,16 +27,24 @@ public:
     Q_INVOKABLE QString gameResult() const;
     Q_INVOKABLE QVariantList getValidMoves(int row, int col);
     Q_INVOKABLE void promotePawn(int row, int col, const QString& piece);
+    Q_INVOKABLE void aiMove();
 
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol) const;
     bool isKingInCheck(bool whiteKing) const;
     bool hasLegalMoves(bool white) const;
     bool wouldBeInCheckAfterMove(int fromRow, int fromCol, int toRow, int toCol, bool whiteKing) const;
 
+    bool aiMode() const;
+    void setAiMode(bool mode);
+    int aiLevel() const;
+    void setAiLevel(int level);
+
 signals:
     void boardStateChanged();
     void whiteTurnChanged();
     void gameOverChanged();
+    void aiModeChanged();
+    void aiLevelChanged();
 
 private:
     QVector<QVector<QString>> m_board;
@@ -51,6 +61,9 @@ private:
 
     int m_enPassantTargetRow;
     int m_enPassantTargetCol;
+
+    bool m_aiMode;
+    int m_aiLevel;
 
     void initBoard();
 };
