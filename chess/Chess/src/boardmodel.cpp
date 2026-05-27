@@ -598,15 +598,6 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
     m_board[toRow][toCol] = piece;
     m_board[fromRow][fromCol] = "";
 
-    if (piece == "♙" && toRow == 0)
-    {
-        m_board[toRow][toCol] = "♕";
-    }
-    if (piece == "♟" && toRow == 7)
-    {
-        m_board[toRow][toCol] = "♛";
-    }
-
     m_enPassantTargetRow = -1;
     m_enPassantTargetCol = -1;
 
