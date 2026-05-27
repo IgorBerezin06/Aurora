@@ -2,7 +2,8 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 import Chess 1.0
 
-Page {
+Page
+{
     id: page
 
     property bool aiMode: false
@@ -12,111 +13,181 @@ Page {
     property int updateTrigger: 0
     property var validMoves: []
 
-    // Диалог выбора фигуры
-    Dialog {
+    Dialog
+    {
         id: promotionDialog
         property bool isWhite: true
-        property int targetRow: -1
-        property int targetCol: -1
+        property var onPieceSelected: null
 
-        Column {
-            anchors.centerIn: parent
-            spacing: 20
-            width: parent.width - 40
+        SilicaFlickable
+        {
+            anchors.fill: parent
+            contentHeight: column.height + Theme.paddingLarge
 
-            Label {
-                text: "Выбери фигуру"
-                font.pixelSize: 28
-                color: "white"
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
-            Column {
-                spacing: 15
+            Column
+            {
+                id: column
                 width: parent.width
+                spacing: Theme.paddingMedium
 
-                Button {
+                DialogHeader
+                {
+                    title: "Выбери фигуру"
+                }
+
+                Button
+                {
                     text: promotionDialog.isWhite ? "♕  Ферзь" : "♛  Ферзь"
-                    width: parent.width
-                    onClicked: {
-                        boardModel.promotePawn(promotionDialog.targetRow, promotionDialog.targetCol,
-                                              promotionDialog.isWhite ? "♕" : "♛")
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked:
+                    {
+                        if (promotionDialog.onPieceSelected)
+                        {
+                            promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♕" : "♛")
+                        }
                         promotionDialog.close()
-                        updateTrigger++
-                        boardLoader.sourceComponent = undefined
-                        boardLoader.sourceComponent = boardComponent
                     }
                 }
-                Button {
+
+                Button
+                {
                     text: promotionDialog.isWhite ? "♖  Ладья" : "♜  Ладья"
-                    width: parent.width
-                    onClicked: {
-                        boardModel.promotePawn(promotionDialog.targetRow, promotionDialog.targetCol,
-                                              promotionDialog.isWhite ? "♖" : "♜")
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked:
+                    {
+                        if (promotionDialog.onPieceSelected)
+                        {
+                            promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♖" : "♜")
+                        }
                         promotionDialog.close()
-                        updateTrigger++
-                        boardLoader.sourceComponent = undefined
-                        boardLoader.sourceComponent = boardComponent
                     }
                 }
-                Button {
+
+                Button
+                {
                     text: promotionDialog.isWhite ? "♗  Слон" : "♝  Слон"
-                    width: parent.width
-                    onClicked: {
-                        boardModel.promotePawn(promotionDialog.targetRow, promotionDialog.targetCol,
-                                              promotionDialog.isWhite ? "♗" : "♝")
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked:
+                    {
+                        if (promotionDialog.onPieceSelected)
+                        {
+                            promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♗" : "♝")
+                        }
                         promotionDialog.close()
-                        updateTrigger++
-                        boardLoader.sourceComponent = undefined
-                        boardLoader.sourceComponent = boardComponent
                     }
                 }
-                Button {
+
+                Button
+                {
                     text: promotionDialog.isWhite ? "♘  Конь" : "♞  Конь"
-                    width: parent.width
-                    onClicked: {
-                        boardModel.promotePawn(promotionDialog.targetRow, promotionDialog.targetCol,
-                                              promotionDialog.isWhite ? "♘" : "♞")
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked:
+                    {
+                        if (promotionDialog.onPieceSelected)
+                        {
+                            promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♘" : "♞")
+                        }
                         promotionDialog.close()
-                        updateTrigger++
-                        boardLoader.sourceComponent = undefined
-                        boardLoader.sourceComponent = boardComponent
                     }
                 }
             }
         }
     }
 
-    Rectangle {
+    Rectangle
+    {
         anchors.fill: parent
         color: "#2B2B2B"
         z: -1
     }
 
-    Rectangle {
-        width: 100; height: 40; color: "#4A90D9"; radius: 5
-        anchors.left: parent.left; anchors.top: parent.top; anchors.margins: 20; z: 10
-        Text { anchors.centerIn: parent; text: "← Меню"; color: "white"; font.pixelSize: 18 }
-        MouseArea { anchors.fill: parent; onClicked: pageStack.pop() }
+    Rectangle
+    {
+        width: 100
+        height: 40
+        color: "#4A90D9"
+        radius: 5
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.margins: 20
+        z: 10
+
+        Text
+        {
+            anchors.centerIn: parent
+            text: "← Меню"
+            color: "white"
+            font.pixelSize: 18
+        }
+
+        MouseArea
+        {
+            anchors.fill: parent
+            onClicked: pageStack.pop()
+        }
     }
 
-    BoardModel {
+    BoardModel
+    {
         id: boardModel
+        aiMode: page.aiMode
+        aiLevel: page.aiLevel
+
         onBoardStateChanged: updateTrigger++
-        onWhiteTurnChanged: updateTrigger++
+        onWhiteTurnChanged:
+        {
+            updateTrigger++
+            if (!boardModel.isWhiteTurn() && !boardModel.isGameOver() && page.aiMode)
+            {
+                aiMoveTimer.start()
+            }
+        }
     }
 
-    Timer {
+    Timer
+    {
         id: aiMoveTimer
         interval: 500
-        onTriggered: boardModel.aiMove()
+        onTriggered:
+        {
+            boardModel.aiMove()
+        }
     }
 
-    Label { text: "Шахматы"; anchors.horizontalCenter: parent.horizontalCenter; y: 20; font.pixelSize: 36; color: "white" }
-    Label { text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"; anchors.horizontalCenter: parent.horizontalCenter; y: 80; font.pixelSize: 24; color: "white" }
-    Label { text: boardModel.gameResult; anchors.horizontalCenter: parent.horizontalCenter; y: 120; font.pixelSize: 28; color: "red"; visible: boardModel.gameResult !== "" }
+    Label
+    {
+        text: "Шахматы"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 20
+        font.pixelSize: 36
+        color: "white"
+    }
 
-    Loader {
+    Label
+    {
+        text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 80
+        font.pixelSize: 24
+        color: "white"
+    }
+
+    Label
+    {
+        text: boardModel.gameResult
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 120
+        font.pixelSize: 28
+        color: "red"
+        visible: boardModel.gameResult !== ""
+    }
+
+    Loader
+    {
         id: boardLoader
         anchors.centerIn: parent
         width: 400
@@ -124,65 +195,103 @@ Page {
         sourceComponent: boardComponent
     }
 
-    onUpdateTriggerChanged: {
+    onUpdateTriggerChanged:
+    {
         var oldComponent = boardLoader.sourceComponent
         boardLoader.sourceComponent = undefined
         boardLoader.sourceComponent = oldComponent
     }
 
-    Component {
+    Component
+    {
         id: boardComponent
-        Grid {
+        Grid
+        {
             id: chessGrid
-            rows: 8; columns: 8; spacing: 0; width: 400; height: 400
+            rows: 8
+            columns: 8
+            spacing: 0
+            width: 400
+            height: 400
 
-            Repeater {
+            Repeater
+            {
                 model: 64
-                Rectangle {
-                    width: chessGrid.width / 8; height: chessGrid.height / 8
+
+                Rectangle
+                {
+                    width: chessGrid.width / 8
+                    height: chessGrid.height / 8
                     color: (Math.floor(index / 8) + index) % 2 === 0 ? "#F0D9B5" : "#B58863"
-                    border.color: "#333"; border.width: 0.5
+                    border.color: "#333"
+                    border.width: 0.5
+
                     property int row: Math.floor(index / 8)
                     property int col: index % 8
 
-                    Rectangle {
+                    Rectangle
+                    {
                         anchors.fill: parent
-                        color: {
+                        color:
+                        {
                             for (var i = 0; i < page.validMoves.length; i++)
+                            {
                                 if (page.validMoves[i].row === row && page.validMoves[i].col === col)
+                                {
                                     return "#88FF88"
+                                }
+                            }
                             return "transparent"
                         }
                         opacity: 0.6
                     }
 
-                    Rectangle {
+                    Rectangle
+                    {
                         anchors.fill: parent
                         color: (row === page.selectedRow && col === page.selectedCol) ? "#FFFF00" : "transparent"
                         opacity: 0.5
                     }
 
-                    MouseArea {
+                    MouseArea
+                    {
                         anchors.fill: parent
-                        onClicked: {
-                            if (boardModel.isGameOver()) return
-                            if (selectedRow === -1) {
-                                if (boardModel.pieceAt(row, col) !== "") {
+                        onClicked:
+                        {
+                            if (boardModel.isGameOver())
+                            {
+                                return
+                            }
+                            if (selectedRow === -1)
+                            {
+                                if (boardModel.pieceAt(row, col) !== "")
+                                {
                                     selectedRow = row
                                     selectedCol = col
                                     validMoves = boardModel.getValidMoves(selectedRow, selectedCol)
                                 }
-                            } else {
+                            }
+                            else
+                            {
                                 var piece = boardModel.pieceAt(selectedRow, selectedCol)
                                 var isPawnPromotion = (piece === "♙" && row === 0) || (piece === "♟" && row === 7)
+                                var fromRow = selectedRow
+                                var fromCol = selectedCol
+                                var toRow = row
+                                var toCol = col
 
-                                if (isPawnPromotion) {
+                                if (isPawnPromotion)
+                                {
                                     promotionDialog.isWhite = (piece === "♙")
-                                    promotionDialog.targetRow = row
-                                    promotionDialog.targetCol = col
-                                    boardModel.movePiece(selectedRow, selectedCol, row, col)
+                                    promotionDialog.onPieceSelected = function(selectedPiece)
+                                    {
+                                        boardModel.movePiece(fromRow, fromCol, toRow, toCol)
+                                        boardModel.promotePawn(toRow, toCol, selectedPiece)
+                                    }
                                     promotionDialog.open()
-                                } else {
+                                }
+                                else
+                                {
                                     boardModel.movePiece(selectedRow, selectedCol, row, col)
                                 }
 
@@ -193,11 +302,14 @@ Page {
                         }
                     }
 
-                    Image {
+                    Image
+                    {
                         anchors.centerIn: parent
-                        width: parent.width - 4; height: parent.height - 4
+                        width: parent.width - 4
+                        height: parent.height - 4
                         fillMode: Image.PreserveAspectFit
-                        source: {
+                        source:
+                        {
                             var p = boardModel.pieceAt(row, col)
                             if (p === "") return ""
                             if (p === "♜") return "Chess_rdt45.svg"

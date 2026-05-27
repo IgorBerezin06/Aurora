@@ -724,5 +724,123 @@ void BoardModel::setAiLevel(int level)
 
 void BoardModel::aiMove()
 {
-    qDebug() << "AI move called, level:" << m_aiLevel;
+    if (m_gameOver)
+    {
+        return;
+    }
+    if (m_whiteTurn)
+    {
+        return;
+    }
+
+    QVector<QVector<int>> moves;
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            QString piece = pieceAt(i, j);
+            if (piece.isEmpty())
+            {
+                continue;
+            }
+            bool isWhite = (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔");
+            if (isWhite)
+            {
+                continue;
+            }
+
+            for (int ti = 0; ti < 8; ++ti)
+            {
+                for (int tj = 0; tj < 8; ++tj)
+                {
+                    if (isValidMove(i, j, ti, tj))
+                    {
+                        if (!wouldBeInCheckAfterMove(i, j, ti, tj, false))
+                        {
+                            moves.append({i, j, ti, tj});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (moves.isEmpty())
+    {
+        return;
+    }
+
+    if (m_aiLevel == 1)
+    {
+        int idx = rand() % moves.size();
+        movePiece(moves[idx][0], moves[idx][1], moves[idx][2], moves[idx][3]);
+    }
+    else if (m_aiLevel == 2)
+    {
+        QVector<QVector<int>> captures;
+        for (const auto& move : moves)
+        {
+            if (!pieceAt(move[2], move[3]).isEmpty())
+            {
+                captures.append(move);
+            }
+        }
+        if (!captures.isEmpty())
+        {
+            int idx = rand() % captures.size();
+            movePiece(captures[idx][0], captures[idx][1], captures[idx][2], captures[idx][3]);
+        }
+        else
+        {
+            int idx = rand() % moves.size();
+            movePiece(moves[idx][0], moves[idx][1], moves[idx][2], moves[idx][3]);
+        }
+    }
+    else
+    {
+        int bestScore = -1000000;
+        QVector<int> bestMove;
+        for (const auto& move : moves)
+        {
+            int score = 0;
+            QString target = pieceAt(move[2], move[3]);
+            if (target == "♙")
+            {
+                score = 10;
+            }
+            else if (target == "♘" || target == "♗")
+            {
+                score = 30;
+            }
+            else if (target == "♖")
+            {
+                score = 50;
+            }
+            else if (target == "♕")
+            {
+                score = 90;
+            }
+
+            if ((move[2] == 3 || move[2] == 4) && (move[3] == 3 || move[3] == 4))
+            {
+                score += 5;
+            }
+
+            QString piece = pieceAt(move[0], move[1]);
+            if ((piece == "♞" && move[0] == 0) || (piece == "♘" && move[0] == 7))
+            {
+                score += 10;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+        if (!bestMove.isEmpty())
+        {
+            movePiece(bestMove[0], bestMove[1], bestMove[2], bestMove[3]);
+        }
+    }
 }
