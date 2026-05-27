@@ -12,21 +12,133 @@ Page
     property int selectedCol: -1
     property int updateTrigger: 0
     property var validMoves: []
+    property bool offerDrawPending: false
+    property bool gameEnded: false
+    property string gameResultText: ""
+
+    Dialog
+    {
+        id: drawOfferDialog
+        property bool fromPlayer: true
+        canAccept: true
+
+        SilicaFlickable
+        {
+            anchors.fill: parent
+            contentHeight: drawColumn.height + Theme.paddingLarge
+
+            Column
+            {
+                id: drawColumn
+                width: parent.width
+                spacing: Theme.paddingMedium
+
+                DialogHeader
+                {
+                    title: drawOfferDialog.fromPlayer ? "Предложить ничью" : "Предложение ничьей"
+                }
+
+                Label
+                {
+                    text: drawOfferDialog.fromPlayer ? "Отправить предложение о ничьей?" : "Противник предлагает ничью. Согласиться?"
+                    font.pixelSize: 18
+                    color: "white"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    wrapMode: Text.WordWrap
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                }
+            }
+        }
+
+        onAccepted:
+        {
+            if (fromPlayer)
+            {
+                offerDrawPending = true
+            }
+            else
+            {
+                gameEnded = true
+                gameResultText = "Ничья"
+                boardModel.gameResult = "Ничья"
+                updateTrigger++
+            }
+        }
+
+        onRejected:
+        {
+            if (!fromPlayer)
+            {
+                offerDrawPending = false
+            }
+        }
+    }
+
+    Dialog
+    {
+        id: resignDialog
+        canAccept: true
+
+        SilicaFlickable
+        {
+            anchors.fill: parent
+            contentHeight: resignColumn.height + Theme.paddingLarge
+
+            Column
+            {
+                id: resignColumn
+                width: parent.width
+                spacing: Theme.paddingMedium
+
+                DialogHeader
+                {
+                    title: "Сдаться"
+                }
+
+                Label
+                {
+                    text: "Вы уверены, что хотите сдаться?"
+                    font.pixelSize: 18
+                    color: "white"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    wrapMode: Text.WordWrap
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                }
+            }
+        }
+
+        onAccepted:
+        {
+            gameEnded = true
+            if (boardModel.isWhiteTurn())
+            {
+                gameResultText = "Белые сдались. Чёрные победили"
+                boardModel.gameResult = "Белые сдались. Чёрные победили"
+            }
+            else
+            {
+                gameResultText = "Чёрные сдались. Белые победили"
+                boardModel.gameResult = "Чёрные сдались. Белые победили"
+            }
+            updateTrigger++
+        }
+    }
 
     Dialog
     {
         id: promotionDialog
         property bool isWhite: true
         property var onPieceSelected: null
+        canAccept: false
 
         SilicaFlickable
         {
             anchors.fill: parent
-            contentHeight: column.height + Theme.paddingLarge
+            contentHeight: promoColumn.height + Theme.paddingLarge
 
             Column
             {
-                id: column
+                id: promoColumn
                 width: parent.width
                 spacing: Theme.paddingMedium
 
@@ -46,7 +158,7 @@ Page
                         {
                             promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♕" : "♛")
                         }
-                        promotionDialog.close()
+                        promotionDialog.accept()
                     }
                 }
 
@@ -61,7 +173,7 @@ Page
                         {
                             promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♖" : "♜")
                         }
-                        promotionDialog.close()
+                        promotionDialog.accept()
                     }
                 }
 
@@ -76,7 +188,7 @@ Page
                         {
                             promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♗" : "♝")
                         }
-                        promotionDialog.close()
+                        promotionDialog.accept()
                     }
                 }
 
@@ -91,7 +203,7 @@ Page
                         {
                             promotionDialog.onPieceSelected(promotionDialog.isWhite ? "♘" : "♞")
                         }
-                        promotionDialog.close()
+                        promotionDialog.accept()
                     }
                 }
             }
@@ -131,19 +243,113 @@ Page
         }
     }
 
+    Rectangle
+    {
+        width: 100
+        height: 40
+        color: "#E74C3C"
+        radius: 5
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 20
+        z: 10
+
+        Text
+        {
+            anchors.centerIn: parent
+            text: "Сдаться"
+            color: "white"
+            font.pixelSize: 18
+        }
+
+        MouseArea
+        {
+            anchors.fill: parent
+            onClicked: resignDialog.open()
+        }
+    }
+
+    Rectangle
+    {
+        width: 100
+        height: 40
+        color: "#F39C12"
+        radius: 5
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.margins: 20
+        z: 10
+
+        Text
+        {
+            anchors.centerIn: parent
+            text: "Ничья"
+            color: "white"
+            font.pixelSize: 18
+        }
+
+        MouseArea
+        {
+            anchors.fill: parent
+            onClicked:
+            {
+                if (aiMode && !boardModel.isWhiteTurn())
+                {
+                    return
+                }
+                drawOfferDialog.fromPlayer = true
+                drawOfferDialog.open()
+            }
+        }
+    }
+
     BoardModel
     {
         id: boardModel
         aiMode: page.aiMode
         aiLevel: page.aiLevel
 
-        onBoardStateChanged: updateTrigger++
+        onBoardStateChanged:
+        {
+            updateTrigger++
+        }
+
         onWhiteTurnChanged:
         {
             updateTrigger++
             if (!boardModel.isWhiteTurn() && !boardModel.isGameOver() && page.aiMode)
             {
                 aiMoveTimer.start()
+            }
+
+            if (offerDrawPending && !boardModel.isGameOver())
+            {
+                offerDrawPending = false
+                if (aiMode && !boardModel.isWhiteTurn())
+                {
+                    if (boardModel.shouldAcceptDraw())
+                    {
+                        gameEnded = true
+                        gameResultText = "Ничья"
+                        boardModel.gameResult = "Ничья"
+                        updateTrigger++
+                    }
+                }
+                else
+                {
+                    drawOfferDialog.fromPlayer = false
+                    drawOfferDialog.open()
+                }
+            }
+        }
+
+        onGameOverChanged:
+        {
+            if (boardModel.gameResult !== "")
+            {
+                gameEnded = true
+                gameResultText = boardModel.gameResult
+                updateTrigger++
             }
         }
     }
@@ -162,7 +368,7 @@ Page
     {
         text: "Шахматы"
         anchors.horizontalCenter: parent.horizontalCenter
-        y: 20
+        y: 80
         font.pixelSize: 36
         color: "white"
     }
@@ -171,19 +377,19 @@ Page
     {
         text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
         anchors.horizontalCenter: parent.horizontalCenter
-        y: 80
+        y: 130
         font.pixelSize: 24
         color: "white"
     }
 
     Label
     {
-        text: boardModel.gameResult
+        text: gameResultText
         anchors.horizontalCenter: parent.horizontalCenter
-        y: 120
+        y: 170
         font.pixelSize: 28
         color: "red"
-        visible: boardModel.gameResult !== ""
+        visible: gameResultText !== ""
     }
 
     Loader
@@ -258,7 +464,7 @@ Page
                         anchors.fill: parent
                         onClicked:
                         {
-                            if (boardModel.isGameOver())
+                            if (boardModel.isGameOver() || gameEnded)
                             {
                                 return
                             }

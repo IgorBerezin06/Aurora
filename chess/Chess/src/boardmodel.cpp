@@ -844,3 +844,19 @@ void BoardModel::aiMove()
         }
     }
 }
+
+bool BoardModel::shouldAcceptDraw() const
+{
+    if (m_aiLevel == 1)
+    {
+        return (rand() % 100) < 20;
+    }
+    else if (m_aiLevel == 2)
+    {
+        return (rand() % 100) < 40;
+    }
+    else
+    {
+        return (rand() % 100) < 60;
+    }
+}

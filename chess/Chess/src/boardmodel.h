@@ -28,6 +28,7 @@ public:
     Q_INVOKABLE QVariantList getValidMoves(int row, int col);
     Q_INVOKABLE void promotePawn(int row, int col, const QString& piece);
     Q_INVOKABLE void aiMove();
+    Q_INVOKABLE bool shouldAcceptDraw() const;
 
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol) const;
     bool isKingInCheck(bool whiteKing) const;
