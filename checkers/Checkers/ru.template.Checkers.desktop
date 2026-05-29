@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=ru.template.Checkers
+Exec=/usr/bin/ru.template.Checkers
+Name=Checkers
+Name[ru]=Шашки
+
+[X-Application]
+Permissions=
+OrganizationName=ru.template
+ApplicationName=Checkers
+ExecDBus=/usr/bin/ru.template.Checkers
