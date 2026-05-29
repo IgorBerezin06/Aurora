@@ -20,6 +20,7 @@ Page
     property int blackTime: 0
     property bool lastDrawOfferRejected: false
     property bool currentWhiteTurn: true
+    property var moveHistory: []
 
     function formatTime(seconds)
     {
@@ -79,6 +80,7 @@ Page
         selectedRow = -1
         selectedCol = -1
         validMoves = []
+        moveHistory = []
 
         if (timeMode === 1)
         {
@@ -102,6 +104,26 @@ Page
         }
 
         boardModel.resetBoard()
+        updateTrigger++
+    }
+
+    function undoMove()
+    {
+        if (moveHistory.length === 0)
+        {
+            return
+        }
+        if (aiMode && !boardModel.isWhiteTurn())
+        {
+            return
+        }
+        var lastMove = moveHistory.pop()
+        boardModel.undoMove(lastMove.fromRow, lastMove.fromCol, lastMove.toRow, lastMove.toCol, lastMove.piece, lastMove.captured, lastMove.wasPromotion)
+        if (moveHistory.length > 0 && aiMode && !boardModel.isWhiteTurn())
+        {
+            var aiMove = moveHistory.pop()
+            boardModel.undoMove(aiMove.fromRow, aiMove.fromCol, aiMove.toRow, aiMove.toCol, aiMove.piece, aiMove.captured, aiMove.wasPromotion)
+        }
         updateTrigger++
     }
 
@@ -636,6 +658,33 @@ Page
         }
     }
 
+    Rectangle
+    {
+        width: 200
+        height: 50
+        color: "#3498DB"
+        radius: 5
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: boardLoader.bottom
+        anchors.topMargin: 80
+        z: 10
+
+        Text
+        {
+            anchors.centerIn: parent
+            text: "Отмена хода"
+            color: "white"
+            font.pixelSize: 20
+            font.bold: true
+        }
+
+        MouseArea
+        {
+            anchors.fill: parent
+            onClicked: undoMove()
+        }
+    }
+
     onUpdateTriggerChanged:
     {
         var oldComponent = boardLoader.sourceComponent
@@ -804,6 +853,7 @@ Page
                                 var fromCol = selectedCol
                                 var toRow = row
                                 var toCol = col
+                                var capturedPiece = boardModel.pieceAt(toRow, toCol)
 
                                 if (isPawnPromotion)
                                 {
@@ -812,12 +862,30 @@ Page
                                     {
                                         boardModel.movePiece(fromRow, fromCol, toRow, toCol)
                                         boardModel.promotePawn(toRow, toCol, selectedPiece)
+                                        moveHistory.push({
+                                            fromRow: fromRow,
+                                            fromCol: fromCol,
+                                            toRow: toRow,
+                                            toCol: toCol,
+                                            piece: piece,
+                                            captured: capturedPiece,
+                                            wasPromotion: true
+                                        })
                                     }
                                     promotionDialog.open()
                                 }
                                 else
                                 {
                                     boardModel.movePiece(selectedRow, selectedCol, row, col)
+                                    moveHistory.push({
+                                        fromRow: fromRow,
+                                        fromCol: fromCol,
+                                        toRow: toRow,
+                                        toCol: toCol,
+                                        piece: piece,
+                                        captured: capturedPiece,
+                                        wasPromotion: false
+                                    })
                                 }
 
                                 selectedRow = -1

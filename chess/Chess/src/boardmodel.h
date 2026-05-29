@@ -6,6 +6,18 @@
 #include <QPair>
 #include <QVariant>
 
+struct MoveRecord
+{
+    int fromRow;
+    int fromCol;
+    int toRow;
+    int toCol;
+    QString piece;
+    QString captured;
+    bool wasPromotion;
+    QString capturedPiece;
+};
+
 class BoardModel : public QObject
 {
     Q_OBJECT
@@ -28,8 +40,12 @@ public:
     Q_INVOKABLE QVariantList getValidMoves(int row, int col);
     Q_INVOKABLE void promotePawn(int row, int col, const QString& piece);
     Q_INVOKABLE void aiMove();
-    Q_INVOKABLE bool shouldAcceptDraw() const;
+    Q_INVOKABLE void undoMove(int fromRow, int fromCol, int toRow, int toCol, const QString& piece, const QString& captured, bool wasPromotion);
+    Q_INVOKABLE int getHalfMoveClock() const;
+    Q_INVOKABLE bool isThreefoldRepetition() const;
     Q_INVOKABLE void resetBoard();
+    Q_INVOKABLE bool shouldAcceptDraw() const;
+    Q_INVOKABLE bool shouldOfferDraw() const;
 
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol) const;
     bool isKingInCheck(bool whiteKing) const;
@@ -67,7 +83,12 @@ private:
     bool m_aiMode;
     int m_aiLevel;
 
+    int m_halfMoveClock;
+    QVector<QString> m_positionHistory;
+    QVector<MoveRecord> m_moveHistory;
+
     void initBoard();
+    QString getBoardFEN() const;
 };
 
 #endif // BOARDMODEL_H

@@ -21,6 +21,9 @@ BoardModel::BoardModel(QObject *parent) : QObject(parent)
 
     m_aiMode = false;
     m_aiLevel = 1;
+
+    m_halfMoveClock = 0;
+    m_positionHistory.append(getBoardFEN());
 }
 
 void BoardModel::initBoard()
@@ -527,6 +530,15 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         return;
     }
 
+    m_positionHistory.append(getBoardFEN());
+    if (m_positionHistory.size() > 100)
+    {
+        m_positionHistory.removeFirst();
+    }
+
+    QString captured = pieceAt(toRow, toCol);
+    bool wasPromotion = false;
+
     if ((piece == "♔" && fromRow == 7 && fromCol == 4 && toRow == 7 && toCol == 6) ||
         (piece == "♚" && fromRow == 0 && fromCol == 4 && toRow == 0 && toCol == 6))
     {
@@ -545,6 +557,56 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
             m_blackRookMovedKingside = true;
         }
         m_whiteTurn = !m_whiteTurn;
+
+        MoveRecord record;
+        record.fromRow = fromRow;
+        record.fromCol = fromCol;
+        record.toRow = toRow;
+        record.toCol = toCol;
+        record.piece = piece;
+        record.captured = captured;
+        record.wasPromotion = false;
+        record.capturedPiece = "";
+        m_moveHistory.append(record);
+
+        if (piece == "♙" || piece == "♟" || !captured.isEmpty())
+        {
+            m_halfMoveClock = 0;
+        }
+        else
+        {
+            m_halfMoveClock++;
+        }
+
+        bool isCheck = isKingInCheck(m_whiteTurn);
+        bool hasMoves = hasLegalMoves(m_whiteTurn);
+
+        if (!hasMoves)
+        {
+            m_gameOver = true;
+            if (isCheck)
+            {
+                m_gameResult = m_whiteTurn ? "Чёрные победили (мат)" : "Белые победили (мат)";
+            }
+            else
+            {
+                m_gameResult = "Пат (ничья)";
+            }
+            emit gameOverChanged();
+        }
+        else if (isThreefoldRepetition())
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (трёхкратное повторение позиции)";
+            emit gameOverChanged();
+        }
+        else if (m_halfMoveClock >= 50)
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (50 ходов без взятия и движения пешек)";
+            emit gameOverChanged();
+        }
+
         emit boardStateChanged();
         emit whiteTurnChanged();
         return;
@@ -568,6 +630,56 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
             m_blackRookMovedQueenside = true;
         }
         m_whiteTurn = !m_whiteTurn;
+
+        MoveRecord record;
+        record.fromRow = fromRow;
+        record.fromCol = fromCol;
+        record.toRow = toRow;
+        record.toCol = toCol;
+        record.piece = piece;
+        record.captured = captured;
+        record.wasPromotion = false;
+        record.capturedPiece = "";
+        m_moveHistory.append(record);
+
+        if (piece == "♙" || piece == "♟" || !captured.isEmpty())
+        {
+            m_halfMoveClock = 0;
+        }
+        else
+        {
+            m_halfMoveClock++;
+        }
+
+        bool isCheck = isKingInCheck(m_whiteTurn);
+        bool hasMoves = hasLegalMoves(m_whiteTurn);
+
+        if (!hasMoves)
+        {
+            m_gameOver = true;
+            if (isCheck)
+            {
+                m_gameResult = m_whiteTurn ? "Чёрные победили (мат)" : "Белые победили (мат)";
+            }
+            else
+            {
+                m_gameResult = "Пат (ничья)";
+            }
+            emit gameOverChanged();
+        }
+        else if (isThreefoldRepetition())
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (трёхкратное повторение позиции)";
+            emit gameOverChanged();
+        }
+        else if (m_halfMoveClock >= 50)
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (50 ходов без взятия и движения пешек)";
+            emit gameOverChanged();
+        }
+
         emit boardStateChanged();
         emit whiteTurnChanged();
         return;
@@ -575,10 +687,54 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
 
     if (piece == "♙" && toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol && m_board[toRow + 1][toCol] == "♟")
     {
+        captured = "♟";
         m_board[toRow][toCol] = piece;
         m_board[fromRow][fromCol] = "";
         m_board[toRow + 1][toCol] = "";
         m_whiteTurn = !m_whiteTurn;
+
+        MoveRecord record;
+        record.fromRow = fromRow;
+        record.fromCol = fromCol;
+        record.toRow = toRow;
+        record.toCol = toCol;
+        record.piece = piece;
+        record.captured = captured;
+        record.wasPromotion = false;
+        record.capturedPiece = captured;
+        m_moveHistory.append(record);
+
+        m_halfMoveClock = 0;
+
+        bool isCheck = isKingInCheck(m_whiteTurn);
+        bool hasMoves = hasLegalMoves(m_whiteTurn);
+
+        if (!hasMoves)
+        {
+            m_gameOver = true;
+            if (isCheck)
+            {
+                m_gameResult = m_whiteTurn ? "Чёрные победили (мат)" : "Белые победили (мат)";
+            }
+            else
+            {
+                m_gameResult = "Пат (ничья)";
+            }
+            emit gameOverChanged();
+        }
+        else if (isThreefoldRepetition())
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (трёхкратное повторение позиции)";
+            emit gameOverChanged();
+        }
+        else if (m_halfMoveClock >= 50)
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (50 ходов без взятия и движения пешек)";
+            emit gameOverChanged();
+        }
+
         emit boardStateChanged();
         emit whiteTurnChanged();
         return;
@@ -586,13 +742,62 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
 
     if (piece == "♟" && toRow == m_enPassantTargetRow && toCol == m_enPassantTargetCol && m_board[toRow - 1][toCol] == "♙")
     {
+        captured = "♙";
         m_board[toRow][toCol] = piece;
         m_board[fromRow][fromCol] = "";
         m_board[toRow - 1][toCol] = "";
         m_whiteTurn = !m_whiteTurn;
+
+        MoveRecord record;
+        record.fromRow = fromRow;
+        record.fromCol = fromCol;
+        record.toRow = toRow;
+        record.toCol = toCol;
+        record.piece = piece;
+        record.captured = captured;
+        record.wasPromotion = false;
+        record.capturedPiece = captured;
+        m_moveHistory.append(record);
+
+        m_halfMoveClock = 0;
+
+        bool isCheck = isKingInCheck(m_whiteTurn);
+        bool hasMoves = hasLegalMoves(m_whiteTurn);
+
+        if (!hasMoves)
+        {
+            m_gameOver = true;
+            if (isCheck)
+            {
+                m_gameResult = m_whiteTurn ? "Чёрные победили (мат)" : "Белые победили (мат)";
+            }
+            else
+            {
+                m_gameResult = "Пат (ничья)";
+            }
+            emit gameOverChanged();
+        }
+        else if (isThreefoldRepetition())
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (трёхкратное повторение позиции)";
+            emit gameOverChanged();
+        }
+        else if (m_halfMoveClock >= 50)
+        {
+            m_gameOver = true;
+            m_gameResult = "Ничья (50 ходов без взятия и движения пешек)";
+            emit gameOverChanged();
+        }
+
         emit boardStateChanged();
         emit whiteTurnChanged();
         return;
+    }
+
+    if ((piece == "♙" && toRow == 0) || (piece == "♟" && toRow == 7))
+    {
+        wasPromotion = true;
     }
 
     m_board[toRow][toCol] = piece;
@@ -619,6 +824,26 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
     if (piece == "♜" && fromRow == 0 && fromCol == 7) m_blackRookMovedKingside = true;
     if (piece == "♜" && fromRow == 0 && fromCol == 0) m_blackRookMovedQueenside = true;
 
+    MoveRecord record;
+    record.fromRow = fromRow;
+    record.fromCol = fromCol;
+    record.toRow = toRow;
+    record.toCol = toCol;
+    record.piece = piece;
+    record.captured = captured;
+    record.wasPromotion = wasPromotion;
+    record.capturedPiece = captured;
+    m_moveHistory.append(record);
+
+    if (piece == "♙" || piece == "♟" || !captured.isEmpty())
+    {
+        m_halfMoveClock = 0;
+    }
+    else
+    {
+        m_halfMoveClock++;
+    }
+
     m_whiteTurn = !m_whiteTurn;
 
     bool isCheck = isKingInCheck(m_whiteTurn);
@@ -637,6 +862,31 @@ void BoardModel::movePiece(int fromRow, int fromCol, int toRow, int toCol)
         }
         qDebug() << "Game over:" << m_gameResult;
         emit gameOverChanged();
+        emit whiteTurnChanged();
+        emit boardStateChanged();
+        return;
+    }
+
+    if (isThreefoldRepetition())
+    {
+        m_gameOver = true;
+        m_gameResult = "Ничья (трёхкратное повторение позиции)";
+        qDebug() << "Game over:" << m_gameResult;
+        emit gameOverChanged();
+        emit whiteTurnChanged();
+        emit boardStateChanged();
+        return;
+    }
+
+    if (m_halfMoveClock >= 50)
+    {
+        m_gameOver = true;
+        m_gameResult = "Ничья (50 ходов без взятия и движения пешек)";
+        qDebug() << "Game over:" << m_gameResult;
+        emit gameOverChanged();
+        emit whiteTurnChanged();
+        emit boardStateChanged();
+        return;
     }
 
     emit whiteTurnChanged();
@@ -861,6 +1111,48 @@ bool BoardModel::shouldAcceptDraw() const
     }
 }
 
+bool BoardModel::shouldOfferDraw() const
+{
+    if (m_gameOver)
+    {
+        return false;
+    }
+
+    if (m_aiLevel == 1)
+    {
+        return (rand() % 100) < 5;
+    }
+    else if (m_aiLevel == 2)
+    {
+        return (rand() % 100) < 10;
+    }
+    else
+    {
+        int whiteCount = 0;
+        int blackCount = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            for (int j = 0; j < 8; ++j)
+            {
+                QString piece = m_board[i][j];
+                if (piece == "♙" || piece == "♖" || piece == "♘" || piece == "♗" || piece == "♕" || piece == "♔")
+                {
+                    whiteCount++;
+                }
+                else if (piece == "♟" || piece == "♜" || piece == "♞" || piece == "♝" || piece == "♛" || piece == "♚")
+                {
+                    blackCount++;
+                }
+            }
+        }
+        if (whiteCount <= 3 && blackCount <= 3)
+        {
+            return (rand() % 100) < 30;
+        }
+        return (rand() % 100) < 15;
+    }
+}
+
 void BoardModel::resetBoard()
 {
     initBoard();
@@ -875,8 +1167,114 @@ void BoardModel::resetBoard()
     m_blackRookMovedQueenside = false;
     m_enPassantTargetRow = -1;
     m_enPassantTargetCol = -1;
+    m_halfMoveClock = 0;
+    m_moveHistory.clear();
+    m_positionHistory.clear();
+    m_positionHistory.append(getBoardFEN());
 
     emit boardStateChanged();
     emit whiteTurnChanged();
     emit gameOverChanged();
+}
+
+void BoardModel::undoMove(int fromRow, int fromCol, int toRow, int toCol, const QString& piece, const QString& captured, bool wasPromotion)
+{
+    m_board[fromRow][fromCol] = piece;
+    m_board[toRow][toCol] = captured;
+
+    if (wasPromotion)
+    {
+        if (piece == "♙")
+        {
+            m_board[fromRow][fromCol] = "♙";
+        }
+        else if (piece == "♟")
+        {
+            m_board[fromRow][fromCol] = "♟";
+        }
+    }
+
+    m_whiteTurn = !m_whiteTurn;
+    m_gameOver = false;
+    m_gameResult = "";
+
+    if (m_moveHistory.size() > 0)
+    {
+        m_moveHistory.removeLast();
+    }
+
+    emit boardStateChanged();
+    emit whiteTurnChanged();
+    emit gameOverChanged();
+}
+
+int BoardModel::getHalfMoveClock() const
+{
+    return m_halfMoveClock;
+}
+
+bool BoardModel::isThreefoldRepetition() const
+{
+    QString currentFEN = getBoardFEN();
+    qDebug() << "=== ТРЁХКРАТНОЕ ПОВТОРЕНИЕ ===";
+    qDebug() << "Текущая FEN:" << currentFEN;
+    qDebug() << "Размер истории:" << m_positionHistory.size();
+
+    int count = 0;
+    for (int i = 0; i < m_positionHistory.size(); ++i)
+    {
+        qDebug() << "История" << i << ":" << m_positionHistory[i];
+        if (m_positionHistory[i] == currentFEN)
+        {
+            count++;
+            qDebug() << "СОВПАДЕНИЕ! Счётчик:" << count;
+        }
+    }
+    qDebug() << "Всего совпадений:" << count;
+    qDebug() << "===========================";
+    return count >= 2;
+}
+
+QString BoardModel::getBoardFEN() const
+{
+    QString fen;
+    for (int i = 0; i < 8; ++i)
+    {
+        int empty = 0;
+        for (int j = 0; j < 8; ++j)
+        {
+            QString piece = m_board[i][j];
+            if (piece.isEmpty())
+            {
+                empty++;
+            }
+            else
+            {
+                if (empty > 0)
+                {
+                    fen += QString::number(empty);
+                    empty = 0;
+                }
+                if (piece == "♜") fen += "r";
+                else if (piece == "♞") fen += "n";
+                else if (piece == "♝") fen += "b";
+                else if (piece == "♛") fen += "q";
+                else if (piece == "♚") fen += "k";
+                else if (piece == "♟") fen += "p";
+                else if (piece == "♖") fen += "R";
+                else if (piece == "♘") fen += "N";
+                else if (piece == "♗") fen += "B";
+                else if (piece == "♕") fen += "Q";
+                else if (piece == "♔") fen += "K";
+                else if (piece == "♙") fen += "P";
+            }
+        }
+        if (empty > 0)
+        {
+            fen += QString::number(empty);
+        }
+        if (i < 7) fen += "/";
+    }
+    fen += m_whiteTurn ? " w" : " b";
+    return fen;
 }
