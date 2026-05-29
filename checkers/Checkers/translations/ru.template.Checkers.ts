@@ -39,12 +39,4 @@
         <translation>Checkers</translation>
     </message>
 </context>
-<context>
-    <name>MainPage</name>
-    <message>
-        <location filename="../qml/pages/MainPage.qml" line="10"/>
-        <source>Checkers</source>
-        <translation>Checkers</translation>
-    </message>
-</context>
 </TS>
