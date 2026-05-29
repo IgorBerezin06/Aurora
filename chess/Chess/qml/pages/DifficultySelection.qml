@@ -5,12 +5,16 @@ Page
 {
     id: page
 
-    Rectangle {
+    property int selectedTimeMode: 1
+
+    Rectangle
+    {
         anchors.fill: parent
         color: "#2B2B2B"
     }
 
-    Rectangle {
+    Rectangle
+    {
         width: 100
         height: 40
         color: "#4A90D9"
@@ -20,58 +24,122 @@ Page
         anchors.margins: 20
         z: 10
 
-        Text {
+        Text
+        {
             anchors.centerIn: parent
-            text: "← Меню"
+            text: "← Назад"
             color: "white"
             font.pixelSize: 18
         }
 
-        MouseArea {
+        MouseArea
+        {
             anchors.fill: parent
-            onClicked: {
-                pageStack.pop()
-            }
+            onClicked: pageStack.pop()
         }
     }
 
     Column
     {
         anchors.centerIn: parent
-        spacing: 30
+        spacing: 20
+        width: parent.width - 80
 
         Label
         {
-            text: "Выбери сложность"
+            text: "Выбери уровень сложности"
             anchors.horizontalCenter: parent.horizontalCenter
-            font.pixelSize: 32
+            font.pixelSize: 28
             color: "white"
+        }
+
+        Label
+        {
+            text: "Режим времени"
+            anchors.horizontalCenter: parent.horizontalCenter
+            font.pixelSize: 22
+            color: "white"
+            font.bold: true
+        }
+
+        ComboBox
+        {
+            id: timeCombo
+            width: parent.width
+            label: "Режим времени"
+            menu: ContextMenu
+            {
+                MenuItem
+                {
+                    text: "Без ограничений"
+                    onClicked: selectedTimeMode = 0
+                }
+                MenuItem
+                {
+                    text: "Блиц (3 мин + 2 сек)"
+                    onClicked: selectedTimeMode = 1
+                }
+                MenuItem
+                {
+                    text: "Рапид (10 мин + 5 сек)"
+                    onClicked: selectedTimeMode = 2
+                }
+                MenuItem
+                {
+                    text: "Классика (30 мин + 30 сек)"
+                    onClicked: selectedTimeMode = 3
+                }
+            }
+        }
+
+        Label
+        {
+            text: ""
+            height: 20
         }
 
         Button
         {
             text: "Лёгкий"
+            width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"), {aiMode: true, aiLevel: 1})
+                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                {
+                    aiMode: true,
+                    aiLevel: 1,
+                    timeMode: selectedTimeMode
+                })
             }
         }
 
         Button
         {
             text: "Средний"
+            width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"), {aiMode: true, aiLevel: 2})
+                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                {
+                    aiMode: true,
+                    aiLevel: 2,
+                    timeMode: selectedTimeMode
+                })
             }
         }
 
         Button
         {
             text: "Сложный"
+            width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"), {aiMode: true, aiLevel: 3})
+                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                {
+                    aiMode: true,
+                    aiLevel: 3,
+                    timeMode: selectedTimeMode
+                })
             }
         }
     }

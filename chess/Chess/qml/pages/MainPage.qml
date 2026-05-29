@@ -8,6 +8,7 @@ Page
 
     property bool aiMode: false
     property int aiLevel: 1
+    property int timeMode: 1
     property int selectedRow: -1
     property int selectedCol: -1
     property int updateTrigger: 0
@@ -15,6 +16,84 @@ Page
     property bool offerDrawPending: false
     property bool gameEnded: false
     property string gameResultText: ""
+    property int whiteTime: 0
+    property int blackTime: 0
+    property bool lastDrawOfferRejected: false
+    property bool currentWhiteTurn: true
+
+    function formatTime(seconds)
+    {
+        if (seconds <= 0)
+        {
+            return "00:00"
+        }
+        var mins = Math.floor(seconds / 60)
+        var secs = seconds % 60
+        return (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs)
+    }
+
+    function addTimeIncrement(forWhite)
+    {
+        if (timeMode === 1)
+        {
+            if (forWhite)
+            {
+                whiteTime += 2
+            }
+            else
+            {
+                blackTime += 2
+            }
+        }
+        else if (timeMode === 2)
+        {
+            if (forWhite)
+            {
+                whiteTime += 5
+            }
+            else
+            {
+                blackTime += 5
+            }
+        }
+        else if (timeMode === 3)
+        {
+            if (forWhite)
+            {
+                whiteTime += 30
+            }
+            else
+            {
+                blackTime += 30
+            }
+        }
+        updateTrigger++
+    }
+
+    Component.onCompleted:
+    {
+        if (timeMode === 1)
+        {
+            whiteTime = 180
+            blackTime = 180
+        }
+        else if (timeMode === 2)
+        {
+            whiteTime = 600
+            blackTime = 600
+        }
+        else if (timeMode === 3)
+        {
+            whiteTime = 1800
+            blackTime = 1800
+        }
+        else
+        {
+            whiteTime = 0
+            blackTime = 0
+        }
+        updateTrigger++
+    }
 
     Dialog
     {
@@ -70,6 +149,10 @@ Page
             if (!fromPlayer)
             {
                 offerDrawPending = false
+            }
+            else
+            {
+                lastDrawOfferRejected = true
             }
         }
     }
@@ -210,6 +293,49 @@ Page
         }
     }
 
+    Timer
+    {
+        id: clockTimer
+        interval: 1000
+        running: !boardModel.isGameOver() && !gameEnded && (timeMode !== 0) && !(aiMode && !boardModel.isWhiteTurn())
+        repeat: true
+        onTriggered:
+        {
+            if (boardModel.isWhiteTurn())
+            {
+                if (whiteTime > 0)
+                {
+                    whiteTime--
+                    updateTrigger++
+                }
+                if (whiteTime <= 0 && !gameEnded)
+                {
+                    clockTimer.running = false
+                    gameEnded = true
+                    gameResultText = "Белые проиграли по времени"
+                    boardModel.gameResult = "Белые проиграли по времени"
+                    updateTrigger++
+                }
+            }
+            else
+            {
+                if (blackTime > 0)
+                {
+                    blackTime--
+                    updateTrigger++
+                }
+                if (blackTime <= 0 && !gameEnded)
+                {
+                    clockTimer.running = false
+                    gameEnded = true
+                    gameResultText = "Чёрные проиграли по времени"
+                    boardModel.gameResult = "Чёрные проиграли по времени"
+                    updateTrigger++
+                }
+            }
+        }
+    }
+
     Rectangle
     {
         anchors.fill: parent
@@ -297,10 +423,123 @@ Page
                 {
                     return
                 }
+                if (lastDrawOfferRejected)
+                {
+                    return
+                }
                 drawOfferDialog.fromPlayer = true
                 drawOfferDialog.open()
             }
         }
+    }
+
+    Row
+    {
+        anchors.top: parent.top
+        anchors.topMargin: 80
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 100
+
+        Rectangle
+        {
+            width: 120
+            height: 60
+            color: currentWhiteTurn ? "#4CAF50" : "#333333"
+            radius: 10
+            border.color: "white"
+            border.width: 1
+
+            Column
+            {
+                anchors.centerIn: parent
+                spacing: 5
+
+                Text
+                {
+                    text: "Белые"
+                    color: "white"
+                    font.pixelSize: 14
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+
+                Text
+                {
+                    text: formatTime(whiteTime)
+                    color: whiteTime < 10 ? "red" : "white"
+                    font.pixelSize: 24
+                    font.bold: true
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+        }
+
+        Rectangle
+        {
+            width: 120
+            height: 60
+            color: !currentWhiteTurn ? "#4CAF50" : "#333333"
+            radius: 10
+            border.color: "white"
+            border.width: 1
+
+            Column
+            {
+                anchors.centerIn: parent
+                spacing: 5
+
+                Text
+                {
+                    text: "Чёрные"
+                    color: "white"
+                    font.pixelSize: 14
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+
+                Text
+                {
+                    text: formatTime(blackTime)
+                    color: blackTime < 10 ? "red" : "white"
+                    font.pixelSize: 24
+                    font.bold: true
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+        }
+    }
+
+    Label
+    {
+        text: currentWhiteTurn ? "Ход белых" : "Ход чёрных"
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 160
+        font.pixelSize: 20
+        color: "white"
+    }
+
+    Label
+    {
+        text: gameResultText
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: 190
+        font.pixelSize: 24
+        color: "red"
+        visible: gameResultText !== ""
+    }
+
+    Loader
+    {
+        id: boardLoader
+        anchors.centerIn: parent
+        width: 400
+        height: 400
+        sourceComponent: boardComponent
+    }
+
+    onUpdateTriggerChanged:
+    {
+        var oldComponent = boardLoader.sourceComponent
+        boardLoader.sourceComponent = undefined
+        boardLoader.sourceComponent = oldComponent
     }
 
     BoardModel
@@ -316,10 +555,33 @@ Page
 
         onWhiteTurnChanged:
         {
+            currentWhiteTurn = boardModel.isWhiteTurn()
+
+            if (!gameEnded && timeMode !== 0 && !boardModel.isGameOver())
+            {
+                if (!boardModel.isWhiteTurn())
+                {
+                    addTimeIncrement(true)
+                }
+                else
+                {
+                    addTimeIncrement(false)
+                }
+            }
+
+            lastDrawOfferRejected = false
             updateTrigger++
+
             if (!boardModel.isWhiteTurn() && !boardModel.isGameOver() && page.aiMode)
             {
                 aiMoveTimer.start()
+            }
+            else if (boardModel.isWhiteTurn() && !boardModel.isGameOver() && page.aiMode)
+            {
+                if (boardModel.shouldOfferDraw() && !offerDrawPending && !gameEnded)
+                {
+                    offerDrawPending = true
+                }
             }
 
             if (offerDrawPending && !boardModel.isGameOver())
@@ -362,50 +624,6 @@ Page
         {
             boardModel.aiMove()
         }
-    }
-
-    Label
-    {
-        text: "Шахматы"
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: 80
-        font.pixelSize: 36
-        color: "white"
-    }
-
-    Label
-    {
-        text: (updateTrigger, boardModel.isWhiteTurn()) ? "Ход белых" : "Ход чёрных"
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: 130
-        font.pixelSize: 24
-        color: "white"
-    }
-
-    Label
-    {
-        text: gameResultText
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: 170
-        font.pixelSize: 28
-        color: "red"
-        visible: gameResultText !== ""
-    }
-
-    Loader
-    {
-        id: boardLoader
-        anchors.centerIn: parent
-        width: 400
-        height: 400
-        sourceComponent: boardComponent
-    }
-
-    onUpdateTriggerChanged:
-    {
-        var oldComponent = boardLoader.sourceComponent
-        boardLoader.sourceComponent = undefined
-        boardLoader.sourceComponent = oldComponent
     }
 
     Component
