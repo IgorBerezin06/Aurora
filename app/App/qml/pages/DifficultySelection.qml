@@ -104,7 +104,7 @@ Page
             width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                pageStack.push(Qt.resolvedUrl("ChessGame.qml"),
                 {
                     aiMode: true,
                     aiLevel: 1,
@@ -119,7 +119,7 @@ Page
             width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                pageStack.push(Qt.resolvedUrl("ChessGame.qml"),
                 {
                     aiMode: true,
                     aiLevel: 2,
@@ -134,7 +134,7 @@ Page
             width: parent.width
             onClicked:
             {
-                pageStack.push(Qt.resolvedUrl("MainPage.qml"),
+                pageStack.push(Qt.resolvedUrl("ChessGame.qml"),
                 {
                     aiMode: true,
                     aiLevel: 3,
