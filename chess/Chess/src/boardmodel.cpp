@@ -860,3 +860,23 @@ bool BoardModel::shouldAcceptDraw() const
         return (rand() % 100) < 60;
     }
 }
+
+void BoardModel::resetBoard()
+{
+    initBoard();
+    m_whiteTurn = true;
+    m_gameOver = false;
+    m_gameResult = "";
+    m_whiteKingMoved = false;
+    m_whiteRookMovedKingside = false;
+    m_whiteRookMovedQueenside = false;
+    m_blackKingMoved = false;
+    m_blackRookMovedKingside = false;
+    m_blackRookMovedQueenside = false;
+    m_enPassantTargetRow = -1;
+    m_enPassantTargetCol = -1;
+
+    emit boardStateChanged();
+    emit whiteTurnChanged();
+    emit gameOverChanged();
+}

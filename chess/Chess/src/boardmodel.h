@@ -29,6 +29,7 @@ public:
     Q_INVOKABLE void promotePawn(int row, int col, const QString& piece);
     Q_INVOKABLE void aiMove();
     Q_INVOKABLE bool shouldAcceptDraw() const;
+    Q_INVOKABLE void resetBoard();
 
     bool isValidMove(int fromRow, int fromCol, int toRow, int toCol) const;
     bool isKingInCheck(bool whiteKing) const;

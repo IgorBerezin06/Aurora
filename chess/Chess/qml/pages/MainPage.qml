@@ -70,6 +70,41 @@ Page
         updateTrigger++
     }
 
+    function resetGame()
+    {
+        gameEnded = false
+        gameResultText = ""
+        offerDrawPending = false
+        lastDrawOfferRejected = false
+        selectedRow = -1
+        selectedCol = -1
+        validMoves = []
+
+        if (timeMode === 1)
+        {
+            whiteTime = 180
+            blackTime = 180
+        }
+        else if (timeMode === 2)
+        {
+            whiteTime = 600
+            blackTime = 600
+        }
+        else if (timeMode === 3)
+        {
+            whiteTime = 1800
+            blackTime = 1800
+        }
+        else
+        {
+            whiteTime = 0
+            blackTime = 0
+        }
+
+        boardModel.resetBoard()
+        updateTrigger++
+    }
+
     Component.onCompleted:
     {
         if (timeMode === 1)
@@ -204,6 +239,45 @@ Page
                 boardModel.gameResult = "Чёрные сдались. Белые победили"
             }
             updateTrigger++
+        }
+    }
+
+    Dialog
+    {
+        id: newGameDialog
+        canAccept: true
+
+        SilicaFlickable
+        {
+            anchors.fill: parent
+            contentHeight: newGameColumn.height + Theme.paddingLarge
+
+            Column
+            {
+                id: newGameColumn
+                width: parent.width
+                spacing: Theme.paddingMedium
+
+                DialogHeader
+                {
+                    title: "Новая игра"
+                }
+
+                Label
+                {
+                    text: "Вы уверены, что хотите начать новую игру? Текущая партия будет потеряна."
+                    font.pixelSize: 18
+                    color: "white"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    wrapMode: Text.WordWrap
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                }
+            }
+        }
+
+        onAccepted:
+        {
+            resetGame()
         }
     }
 
@@ -533,6 +607,33 @@ Page
         width: 400
         height: 400
         sourceComponent: boardComponent
+    }
+
+    Rectangle
+    {
+        width: 200
+        height: 50
+        color: "#4A90D9"
+        radius: 5
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: boardLoader.bottom
+        anchors.topMargin: 20
+        z: 10
+
+        Text
+        {
+            anchors.centerIn: parent
+            text: "Новая игра"
+            color: "white"
+            font.pixelSize: 20
+            font.bold: true
+        }
+
+        MouseArea
+        {
+            anchors.fill: parent
+            onClicked: newGameDialog.open()
+        }
     }
 
     onUpdateTriggerChanged:
