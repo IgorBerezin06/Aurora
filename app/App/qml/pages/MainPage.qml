@@ -1,36 +1,61 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 
-Page {
+Page
+{
     id: page
 
-    Rectangle {
+    Rectangle
+    {
         anchors.fill: parent
         color: "#2B2B2B"
     }
 
-    Column {
+    Column
+    {
         anchors.centerIn: parent
         spacing: 30
+        width: parent.width - 80
 
-        Text {
+        Label
+        {
+            text: "Strategy Masters"
             anchors.horizontalCenter: parent.horizontalCenter
+            font.pixelSize: 36
+            color: "white"
+            font.bold: true
+        }
+
+        Label
+        {
             text: "Выбери игру"
-            font.pixelSize: 32
+            anchors.horizontalCenter: parent.horizontalCenter
+            font.pixelSize: 28
             color: "white"
         }
 
-        Button {
+        Button
+        {
             text: "Шахматы"
-            onClicked: {
-                console.log("Запуск шахмат")
+            width: parent.width
+            anchors.horizontalCenter: parent.horizontalCenter
+            onClicked:
+            {
+                pageStack.push(Qt.resolvedUrl("ModeSelection.qml"),
+                {
+                    gameType: "chess"
+                })
             }
         }
 
-        Button {
-            text: "Вторая игра"
-            onClicked: {
-                console.log("Запуск второй игры")
+        Button
+        {
+            text: "Шашки"
+            width: parent.width
+            anchors.horizontalCenter: parent.horizontalCenter
+            onClicked:
+            {
+                console.log("Шашки будут добавлены позже")
             }
         }
     }
