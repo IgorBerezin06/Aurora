@@ -66,10 +66,8 @@ private:
     QVector<MoveRecord> m_moveHistory;
 
     void initBoard();
-    bool isCaptureMove(int fromRow, int fromCol, int toRow, int toCol) const;
-    QVector<QVector<int>> getAllCaptures(int row, int col, bool white, QVector<QVector<int>> currentChain) const;
-    bool wouldBeKingAfterMove(int row, int col) const;
-    int evaluatePosition() const;
+    bool hasAnyCapture(bool white) const;
+    void findAllCaptures(int row, int col, bool white, QVector<QVector<int>>& result, QVector<int>& current, int depth);
 };
 
 #endif // CHECKERSMODEL_H

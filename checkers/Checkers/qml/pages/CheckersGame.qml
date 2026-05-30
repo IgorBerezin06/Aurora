@@ -61,11 +61,11 @@ Page
         {
             if (forWhite)
             {
-                whiteTime += 30
+                whiteTime += 10
             }
             else
             {
-                blackTime += 30
+                blackTime += 10
             }
         }
         updateTrigger++
@@ -196,7 +196,6 @@ Page
             {
                 gameEnded = true
                 gameResultText = "Ничья"
-                checkersModel.gameResult = "Ничья"
                 updateTrigger++
             }
         }
@@ -253,12 +252,10 @@ Page
             if (checkersModel.isWhiteTurn())
             {
                 gameResultText = "Белые сдались. Чёрные победили"
-                checkersModel.gameResult = "Белые сдались. Чёрные победили"
             }
             else
             {
                 gameResultText = "Чёрные сдались. Белые победили"
-                checkersModel.gameResult = "Чёрные сдались. Белые победили"
             }
             updateTrigger++
         }
@@ -323,7 +320,6 @@ Page
                     clockTimer.running = false
                     gameEnded = true
                     gameResultText = "Белые проиграли по времени"
-                    checkersModel.gameResult = "Белые проиграли по времени"
                     updateTrigger++
                 }
             }
@@ -339,7 +335,6 @@ Page
                     clockTimer.running = false
                     gameEnded = true
                     gameResultText = "Чёрные проиграли по времени"
-                    checkersModel.gameResult = "Чёрные проиграли по времени"
                     updateTrigger++
                 }
             }
@@ -657,7 +652,6 @@ Page
                     {
                         gameEnded = true
                         gameResultText = "Ничья"
-                        checkersModel.gameResult = "Ничья"
                         updateTrigger++
                     }
                 }
@@ -808,19 +802,16 @@ Page
                             text:
                             {
                                 var p = checkersModel.pieceAt(row, col)
-                                if (p === "W") return "♔"
-                                if (p === "B") return "♚"
+                                if (p === "W" || p === "B") return "★"
                                 return ""
                             }
                             font.pixelSize: parent.width * 0.5
-                            color:
+                            color: "gold"
+                            visible:
                             {
                                 var p = checkersModel.pieceAt(row, col)
-                                if (p === "W") return "gold"
-                                if (p === "B") return "gold"
-                                return "transparent"
+                                return (p === "W" || p === "B")
                             }
-                            visible: (p === "W" || p === "B")
                         }
                     }
                 }
