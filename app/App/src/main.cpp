@@ -1,6 +1,7 @@
 #include <QtQuick>
 #include <auroraapp.h>
 #include "boardmodel.h"
+#include "CheckersModel.h"
 
 int main(int argc, char *argv[])
 {
@@ -9,6 +10,7 @@ int main(int argc, char *argv[])
     application->setApplicationName(QStringLiteral("App"));
 
     qmlRegisterType<BoardModel>("Chess", 1, 0, "BoardModel");
+    qmlRegisterType<CheckersModel>("Checkers", 1, 0, "CheckersModel");
 
     QScopedPointer<QQuickView> view(Aurora::Application::createView());
     view->setSource(Aurora::Application::pathTo(QStringLiteral("qml/App.qml")));

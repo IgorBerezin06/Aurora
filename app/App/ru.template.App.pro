@@ -7,10 +7,12 @@ PKGCONFIG += \
 
 SOURCES += \
     src/main.cpp \
-    src/boardmodel.cpp
+    src/boardmodel.cpp \
+    src/CheckersModel.cpp
 
 HEADERS += \
-    src/boardmodel.h
+    src/boardmodel.h \
+    src/CheckersModel.h
 
 DISTFILES += \
     rpm/ru.template.App.spec

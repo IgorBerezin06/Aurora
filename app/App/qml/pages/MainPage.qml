@@ -55,7 +55,10 @@ Page
             anchors.horizontalCenter: parent.horizontalCenter
             onClicked:
             {
-                console.log("Шашки будут добавлены позже")
+                pageStack.push(Qt.resolvedUrl("CheckersModeSelection.qml"),
+                {
+                    gameType: "checkers"
+                })
             }
         }
     }
